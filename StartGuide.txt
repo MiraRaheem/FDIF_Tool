@@ -1,0 +1,6 @@
+S D:\Narrate\fdif_poc> .\.venv\Scripts\Activate.ps1
+(.venv) PS D:\Narrate\fdif_poc> uvicorn app.main:api
+INFO:     Started server process [16436]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://127.0.0.1:8000 (Press CTRL+C to quit)

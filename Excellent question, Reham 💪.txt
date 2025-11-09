@@ -1,0 +1,50 @@
+Excellent question, Reham 💪
+
+Always run your FastAPI (and anything Python-related for this project) **inside your virtual environment** — i.e. when your PowerShell prompt shows `(.venv)` at the beginning.
+
+---
+
+### 💡 Why:
+
+The virtual environment ensures:
+
+* You’re using **the right Python interpreter** for your project.
+* All installed packages (FastAPI, Uvicorn, rdflib, etc.) are available.
+* You don’t accidentally use or break system-wide packages.
+
+---
+
+### ✅ So your prompt should look like:
+
+```
+(.venv) PS D:\Narrate\fdif_poc>
+```
+
+Then run:
+
+```powershell
+uvicorn app.main:app --reload
+```
+
+If your prompt **doesn’t** have `(.venv)` (meaning the venv is not active), you can activate it anytime with:
+
+```powershell
+.\.venv\Scripts\Activate.ps1
+```
+
+You’ll instantly see:
+
+```
+(.venv) PS D:\Narrate\fdif_poc>
+```
+
+Then you’re good to run Uvicorn.
+
+---
+
+Once it’s running, open:
+
+* [http://127.0.0.1:8000](http://127.0.0.1:8000)
+* [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs)
+
+Confirm it shows your **FDIF API** home message — and we can move to the **Excel ingestion** step right after that.
