@@ -11,7 +11,7 @@ api.include_router(ingest.router, prefix="/fdif")
 api.include_router(validate.router, prefix="/fdif")
 api.include_router(blueprint.router, prefix="/fdif")
 api.include_router(iot.router, prefix="/fdif")
-
+api.include_router(ingest.router, prefix="/fdif")
 @api.get("/")
 def home():
     return {"message": "FDIF API is running 🚀"}
