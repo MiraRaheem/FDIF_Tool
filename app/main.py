@@ -8,6 +8,7 @@ api = FastAPI(
 )
 
 api.include_router(ingest.router, prefix="/fdif")
+app.include_router(harmonize.router, prefix="/fdif")
 api.include_router(validate.router, prefix="/fdif")
 api.include_router(blueprint.router, prefix="/fdif")
 api.include_router(iot.router, prefix="/fdif")
