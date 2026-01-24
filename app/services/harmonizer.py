@@ -34,3 +34,52 @@ def harmonize_raw_iot(raw: Dict[str, Any]) -> Dict[str, Any]:
             "line": line,
         },
     }
+
+def harmonize_raw_work_order(raw: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    RAW ERP JSON → FDIF Canonical WorkOrder
+    """
+    # --- Work Order header ---
+    work_order = {
+        "id": raw.get("WorkOrderID"),
+        "status": raw.get("Status"),
+        "requestedQuantity": raw.get("Quantity"),
+    }
+
+    # --- Product ---
+    product = {
+        "id": raw.get("ProductID"),
+        "name": raw.get("ProductName"),
+    }
+
+    # --- BOM ---
+    bom_items = []
+    for item in raw.get("BOM", []):
+        bom_items.append({
+            "materialId": item.get("MaterialID"),
+            "materialName": item.get("MaterialName"),
+            "requiredQuantity": item.get("Qty"),
+            "unit": item.get("Unit"),
+        })
+
+    bill_of_materials = {
+        "items": bom_items
+    }
+
+    # --- Processes / Operations ---
+    processes = []
+    for op in raw.get("Operations", []):
+        processes.append({
+            "operationId": op.get("OperationID"),
+            "name": op.get("Name"),
+            "plannedDuration": op.get("PlannedDuration"),
+            "workstationId": op.get("Workstation"),
+        })
+
+    return {
+        "workOrder": work_order,
+        "product": product,
+        "billOfMaterials": bill_of_materials,
+        "processes": processes,
+        "executions": []  # optional, empty for now
+    }
