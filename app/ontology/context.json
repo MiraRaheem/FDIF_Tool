@@ -1,6 +1,9 @@
 {
   "@context": {
     "j.0": "http://www.semanticweb.org/amal.elgammal/ontologies/2025/3/untitled-ontology-31#",
-    "xsd": "http://www.w3.org/2001/XMLSchema#"
+    "xsd": "http://www.w3.org/2001/XMLSchema#",
+
+    "cfx": "http://www.ipc.org/CFX#",
+    "fdif": "http://fdif.eu/ontology#"
   }
 }
