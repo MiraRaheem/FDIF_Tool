@@ -4,6 +4,7 @@ from app.routers import (
     harmonize_router,
     validate_router,
     iot_router,
+    work_order_router,
     blueprint_router,
 )
 
@@ -20,6 +21,7 @@ api.include_router(validate_router, prefix="/fdif")
 
 # ---- Domain / demo routes ----
 api.include_router(iot_router, prefix="/fdif")
+api.include_router(work_order_router, prefix="/fdif")
 api.include_router(blueprint_router, prefix="/fdif")
 
 @api.get("/")
