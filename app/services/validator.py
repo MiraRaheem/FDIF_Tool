@@ -38,3 +38,31 @@ def validate_and_enrich(harmonized: Dict[str, Any]) -> Tuple[bool, Dict[str, Any
     enriched["temperature_celsius"] = t_c
     # normalize unit to 'C' for downstream (optional)
     return True, enriched, ""
+
+ALLOWED_WO_STATUS = {"Planned", "Released", "Running", "Completed"}
+
+def validate_work_order(canonical: Dict[str, Any]):
+    wo = canonical.get("workOrder", {})
+    product = canonical.get("product", {})
+    bom = canonical.get("billOfMaterials", {})
+    processes = canonical.get("processes", [])
+
+    if not wo.get("id"):
+        return False, canonical, "workOrder.id missing"
+
+    if wo.get("requestedQuantity") is None or wo.get("requestedQuantity") <= 0:
+        return False, canonical, "requestedQuantity must be > 0"
+
+    if wo.get("status") not in ALLOWED_WO_STATUS:
+        return False, canonical, f"invalid work order status: {wo.get('status')}"
+
+    if not product.get("id"):
+        return False, canonical, "product.id missing"
+
+    if not bom.get("items"):
+        return False, canonical, "billOfMaterials.items missing or empty"
+
+    if not processes:
+        return False, canonical, "no production processes defined"
+
+    return True, canonical, ""
