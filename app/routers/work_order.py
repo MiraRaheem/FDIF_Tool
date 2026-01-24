@@ -4,6 +4,7 @@ from app.models import IngestEnvelope
 from app.services.harmonizer import harmonize_raw_work_order
 from app.services.validator import validate_work_order
 from app.services.storage import save_doc, save_dlq
+from app.services.semantics import tag_work_order
 
 router = APIRouter(
     prefix="/work_order",
