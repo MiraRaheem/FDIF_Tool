@@ -61,3 +61,22 @@ def work_order_validate(envelope: IngestEnvelope):
         "next": "semantic-tagging",
         "envelope": out.dict()
     }
+
+@router.post("/tag")
+def work_order_tag(envelope: IngestEnvelope):
+    if envelope.source != "work_order" or envelope.format != "canonical":
+        raise HTTPException(
+            status_code=400,
+            detail="Expected CANONICAL work_order envelope"
+        )
+
+    tagged_payload = tag_work_order(envelope.payload)
+
+    out = envelope.copy(update={"payload": tagged_payload})
+    save_doc("work_order:tag", out.dict())
+
+    return {
+        "status": "tagged",
+        "next": "/fdif/work_order/map",
+        "envelope": out.dict()
+    }
