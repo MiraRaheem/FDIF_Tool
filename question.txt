@@ -1,10 +1,9 @@
-Excellent question, Reham 💪
 
 Always run your FastAPI (and anything Python-related for this project) **inside your virtual environment** — i.e. when your PowerShell prompt shows `(.venv)` at the beginning.
 
 ---
 
-### 💡 Why:
+### Why:
 
 The virtual environment ensures:
 
@@ -14,7 +13,7 @@ The virtual environment ensures:
 
 ---
 
-### ✅ So your prompt should look like:
+###  So your prompt should look like:
 
 ```
 (.venv) PS D:\Narrate\fdif_poc>
