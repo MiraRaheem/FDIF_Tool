@@ -1,10 +1,9 @@
-from app.services.medwood_blueprint_mapper import supplier_to_blueprint
-from app.services.blueprint_api import create_blueprint_instance
 from fastapi import APIRouter, UploadFile, File, Query
-from app.services.validator import validate_supplier
 import pandas as pd
 
 from app.services.medwood_registry import get_harmonizer
+from app.services.validator import validate_supplier
+from app.services.blueprint_adapter import create_supplier_instance
 
 router = APIRouter(tags=["medwood"])
 
@@ -21,29 +20,25 @@ async def upload_medwood_dataset(
 
     harmonizer = get_harmonizer(dataset)
 
-    canonical_rows = []
-
     results = []
 
-for row in rows:
+    for row in rows:
 
-    canonical = harmonizer(row)
-    validated = validate_supplier(canonical)
+        canonical = harmonizer(row)
 
-    if dataset == "supplierAccounts":
+        validated = validate_supplier(canonical)
 
-        blueprint_payload = supplier_to_blueprint(validated)
+        if dataset == "supplierAccounts":
 
-        response = create_blueprint_instance(
-            "MaterialSupplier",
-            blueprint_payload
-        )
+            result = create_supplier_instance(validated)
 
-        results.append({
-            "canonical": canonical,
-            "blueprint_response": response
-        })
+            results.append({
+                "canonical": validated,
+                "blueprint_response": result
+            })
+
     return {
-    "dataset": dataset,
-    "rows_processed": len(results),
-    "sample": results[:3]}
+        "dataset": dataset,
+        "rows_processed": len(results),
+        "sample": results[:3]
+    }
