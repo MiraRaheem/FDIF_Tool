@@ -5,7 +5,7 @@ from app.routers import (
     validate_router,
     iot_router,
     work_order_router,
-    blueprint_router, medwood
+    blueprint_router, medwood_router
 )
 
 api = FastAPI(
