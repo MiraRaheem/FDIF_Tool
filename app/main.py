@@ -1,11 +1,12 @@
 from fastapi import FastAPI
+from app.routers import medwood
 from app.routers import (
     ingest_router,
     harmonize_router,
     validate_router,
     iot_router,
     work_order_router,
-    blueprint_router, medwood_router
+    blueprint_router
 )
 
 api = FastAPI(
