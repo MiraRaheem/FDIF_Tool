@@ -1,5 +1,12 @@
 from fastapi import FastAPI
-from app.routers import ingest, validate, blueprint, iot
+from app.routers import (
+    ingest_router,
+    harmonize_router,
+    validate_router,
+    iot_router,
+    work_order_router,
+    blueprint_router,
+)
 
 api = FastAPI(
     title="FDIF PoC",
@@ -7,11 +14,16 @@ api = FastAPI(
     description="Federated Data Integration Framework prototype"
 )
 
-api.include_router(ingest.router, prefix="/fdif")
-api.include_router(validate.router, prefix="/fdif")
-api.include_router(blueprint.router, prefix="/fdif")
-api.include_router(iot.router, prefix="/fdif")
-api.include_router(ingest.router, prefix="/fdif")
+# ---- FDIF pipeline ----
+api.include_router(ingest_router, prefix="/fdif")
+api.include_router(harmonize_router, prefix="/fdif")
+api.include_router(validate_router, prefix="/fdif")
+
+# ---- Domain / demo routes ----
+api.include_router(iot_router, prefix="/fdif")
+api.include_router(work_order_router, prefix="/fdif")
+api.include_router(blueprint_router, prefix="/fdif")
+
 @api.get("/")
 def home():
     return {"message": "FDIF API is running 🚀"}

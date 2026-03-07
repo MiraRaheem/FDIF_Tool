@@ -1,3 +1,4 @@
+
 # app/routers/ingest.py
 """
 /fdif/ingest
@@ -12,7 +13,7 @@ A single shared ingest endpoint (the "bus") for ALL sources & formats:
 
 from typing import Optional, List, Dict, Any, Union
 from fastapi import APIRouter, HTTPException, Header
-from app.models import IngestEnvelope, IngestBody, CanonicalIoT
+from app.models import IngestEnvelope, IngestBody, CanonicalIoT, CanonicalWorkOrder
 from app.services.storage import save_doc, save_dlq, dedupe
 
 router = APIRouter(tags=["ingest"])
@@ -26,6 +27,8 @@ def _validate_canonical(envelope: IngestEnvelope):
     """
     if envelope.source == "iot":
         CanonicalIoT(**envelope.payload)
+    elif envelope.source == "work_order":
+        CanonicalWorkOrder(**envelope.payload)
     # TODO: add Canonical models for work_order, bom, etc. as needed
 
 def _route_hint(envelope: IngestEnvelope) -> str:

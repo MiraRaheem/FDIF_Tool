@@ -39,6 +39,21 @@ class CanonicalIoT(BaseModel):
 
     class Config:
         extra = "allow"
+from typing import List
+
+class CanonicalWorkOrder(BaseModel):
+    """
+    Light canonical shape for Production Work Orders.
+    This is NOT full validation — only structure.
+    """
+    workOrder: Dict[str, Any]
+    product: Dict[str, Any]
+    billOfMaterials: Dict[str, Any]
+    processes: List[Dict[str, Any]]
+    executions: Optional[List[Dict[str, Any]]] = None
+
+    class Config:
+        extra = "allow"
 
 # Body can be a single envelope or a batch (list of envelopes)
 IngestBody = Union[IngestEnvelope, List[IngestEnvelope]]
