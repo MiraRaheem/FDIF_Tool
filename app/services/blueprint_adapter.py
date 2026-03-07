@@ -38,18 +38,25 @@ def create_instance(class_name, payload):
 
     return r.json()
 
-
 def create_supplier_instance(canonical):
+
+    supplier_id = canonical["supplierId"]
+
+    if supplier_exists(supplier_id):
+        return {
+            "status": "exists",
+            "supplierId": supplier_id
+        }
 
     payload = {
 
-        "individualName": f"MaterialSupplier_{canonical['supplierId']}",
+        "individualName": f"MaterialSupplier_{supplier_id}",
 
         "dataProperties": [
 
             {
                 "property": "hasSupplierID",
-                "value": canonical["supplierId"]
+                "value": supplier_id
             },
 
             {
@@ -61,9 +68,11 @@ def create_supplier_instance(canonical):
                 "property": "hasCountry",
                 "value": canonical["address"]["country"]
             }
+
         ],
 
         "objectProperties": []
     }
 
     return create_instance("MaterialSupplier", payload)
+
