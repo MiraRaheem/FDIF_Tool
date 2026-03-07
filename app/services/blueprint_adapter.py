@@ -48,7 +48,7 @@ def create_instance(class_name, payload):
 
 def create_supplier_instance(canonical):
 
-    supplier_id = canonical["supplierId"]
+    supplier_id = str(canonical["supplierId"])
 
     if supplier_exists(supplier_id):
         return {
@@ -68,13 +68,24 @@ def create_supplier_instance(canonical):
             },
 
             {
-                "property": "hasName",
-                "value": canonical["supplierName"]
+                "property": "hasCountry",
+                "value": canonical["address"]["country"]
+            },
+
+            # REQUIRED ontology properties
+            {
+                "property": "hasLeadTimeDays",
+                "value": 0
             },
 
             {
-                "property": "hasCountry",
-                "value": canonical["address"]["country"]
+                "property": "hasCapacity",
+                "value": 0
+            },
+
+            {
+                "property": "hasPaymentTerms",
+                "value": "Other"
             }
 
         ],
@@ -83,4 +94,3 @@ def create_supplier_instance(canonical):
     }
 
     return create_instance("MaterialSupplier", payload)
-
