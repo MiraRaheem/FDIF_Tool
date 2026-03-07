@@ -21,6 +21,8 @@ def get_existing_suppliers():
 
 def supplier_exists(supplier_id):
 
+    supplier_id = str(supplier_id)   # convert Excel numeric IDs to string
+
     suppliers = get_existing_suppliers()
 
     for s in suppliers:
@@ -32,11 +34,10 @@ def supplier_exists(supplier_id):
 
         # If API returns object dictionaries
         if isinstance(s, dict):
-            if supplier_id in s.get("individualName", ""):
+            if supplier_id in str(s.get("individualName", "")):
                 return True
 
     return False
-
 def create_instance(class_name, payload):
 
     url = f"{BASE_URL}/api/{class_name}"
