@@ -6,3 +6,4 @@ pyshacl
 pandas
 openpyxl
 python-multipart
+requests
