@@ -72,39 +72,19 @@ def create_supplier_instance(canonical):
 
     payload = {
 
-        "individualName": f"MaterialSupplier_{supplier_id}",
+        # use naming pattern already in ontology
+        "individualName": f"Supplier_{supplier_id}",
 
-        "dataProperties": [
+        # IMPORTANT: dictionary, not list
+        "dataProperties": {
+            "hasSupplierID": supplier_id,
+            "hasCountry": canonical["address"]["country"],
+            "hasLeadTimeDays": 0,
+            "hasCapacity": 0,
+            "hasPaymentTerms": "Other"
+        },
 
-            {
-                "property": "hasSupplierID",
-                "value": supplier_id
-            },
-
-            {
-                "property": "hasCountry",
-                "value": canonical["address"]["country"]
-            },
-
-            # REQUIRED ontology properties
-            {
-                "property": "hasLeadTimeDays",
-                "value": 0
-            },
-
-            {
-                "property": "hasCapacity",
-                "value": 0
-            },
-
-            {
-                "property": "hasPaymentTerms",
-                "value": "Other"
-            }
-
-        ],
-
-        "objectProperties": []
+        "objectProperties": {}
     }
 
     return create_instance("MaterialSupplier", payload)
