@@ -13,31 +13,27 @@ def get_class_metadata(class_name):
 
 def get_existing_suppliers():
 
-    url = f"{BASE_URL}/api/query/instances/MaterialSupplier"
+    url = f"{BASE_URL}/api/MaterialSupplier"
 
     r = requests.get(url)
 
-    return r.json()
+    data = r.json()
 
+    return data.get("instances", [])
+    
 def supplier_exists(supplier_id):
 
-    supplier_id = str(supplier_id)   # convert Excel numeric IDs to string
+    supplier_id = str(supplier_id)
 
     suppliers = get_existing_suppliers()
 
     for s in suppliers:
 
-        # If API returns string names
-        if isinstance(s, str):
-            if supplier_id in s:
-                return True
-
-        # If API returns object dictionaries
-        if isinstance(s, dict):
-            if supplier_id in str(s.get("individualName", "")):
-                return True
+        if supplier_id in s:
+            return True
 
     return False
+    
 def create_instance(class_name, payload):
 
     url = f"{BASE_URL}/api/{class_name}"
@@ -72,19 +68,38 @@ def create_supplier_instance(canonical):
 
     payload = {
 
-        # use naming pattern already in ontology
-        "individualName": f"Supplier_{supplier_id}",
+        "individualName": f"MaterialSupplier_{supplier_id}",
 
-        # IMPORTANT: dictionary, not list
-        "dataProperties": {
-            "hasSupplierID": supplier_id,
-            "hasCountry": canonical["address"]["country"],
-            "hasLeadTimeDays": 0,
-            "hasCapacity": 0,
-            "hasPaymentTerms": "Other"
-        },
+        "dataProperties": [
 
-        "objectProperties": {}
+            {
+                "property": "hasSupplierID",
+                "value": supplier_id
+            },
+
+            {
+                "property": "hasCountry",
+                "value": canonical["address"]["country"]
+            },
+
+            {
+                "property": "hasCapacity",
+                "value": "0"
+            },
+
+            {
+                "property": "hasLeadTimeDays",
+                "value": "0"
+            },
+
+            {
+                "property": "hasPaymentTerms",
+                "value": "Other"
+            }
+
+        ],
+
+        "objectProperties": []
     }
 
     return create_instance("MaterialSupplier", payload)
