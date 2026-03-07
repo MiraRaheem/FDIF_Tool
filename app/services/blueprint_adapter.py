@@ -42,19 +42,24 @@ def create_instance(class_name, payload):
 
     url = f"{BASE_URL}/api/{class_name}"
 
-    r = requests.post(url, json=payload)
+    headers = {
+        "Content-Type": "application/json"
+    }
 
-    # Print debugging info in Render logs
-    print("Blueprint API status:", r.status_code)
-    print("Blueprint API response:", r.text)
+    r = requests.post(url, json=payload, headers=headers)
+
+    print("Blueprint URL:", url)
+    print("Status:", r.status_code)
+    print("Response:", r.text)
 
     try:
         return r.json()
-    except Exception:
+    except:
         return {
             "status_code": r.status_code,
             "response_text": r.text
         }
+
 def create_supplier_instance(canonical):
 
     supplier_id = str(canonical["supplierId"])
