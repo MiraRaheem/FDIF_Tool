@@ -1,6 +1,7 @@
 from app.services.medwood_blueprint_mapper import supplier_to_blueprint
 from app.services.blueprint_api import create_blueprint_instance
 from fastapi import APIRouter, UploadFile, File, Query
+from app.services.validator import validate_supplier
 import pandas as pd
 
 from app.services.medwood_registry import get_harmonizer
@@ -27,10 +28,11 @@ async def upload_medwood_dataset(
 for row in rows:
 
     canonical = harmonizer(row)
+    validated = validate_supplier(canonical)
 
     if dataset == "supplierAccounts":
 
-        blueprint_payload = supplier_to_blueprint(canonical)
+        blueprint_payload = supplier_to_blueprint(validated)
 
         response = create_blueprint_instance(
             "MaterialSupplier",
