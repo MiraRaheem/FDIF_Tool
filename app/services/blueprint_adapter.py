@@ -11,6 +11,24 @@ def get_class_metadata(class_name):
 
     return r.json()
 
+def get_existing_suppliers():
+
+    url = f"{BASE_URL}/api/query/instances/MaterialSupplier"
+
+    r = requests.get(url)
+
+    return r.json()
+
+def supplier_exists(supplier_id):
+
+    suppliers = get_existing_suppliers()
+
+    for s in suppliers:
+        if supplier_id in s.get("individualName", ""):
+            return True
+
+    return False
+
 
 def create_instance(class_name, payload):
 
