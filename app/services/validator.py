@@ -66,3 +66,17 @@ def validate_work_order(canonical: Dict[str, Any]):
         return False, canonical, "no production processes defined"
 
     return True, canonical, ""
+def validate_supplier(canonical):
+
+    if not canonical.get("supplierId"):
+        raise ValueError("supplierId is required")
+
+    if not canonical.get("supplierName"):
+        raise ValueError("supplierName is required")
+
+    address = canonical.get("address", {})
+
+    if not address.get("country"):
+        raise ValueError("country is required")
+
+    return canonical
