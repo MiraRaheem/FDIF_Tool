@@ -5,3 +5,4 @@ rdflib
 pyshacl
 pandas
 openpyxl
+python-multipart
