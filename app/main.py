@@ -1,11 +1,12 @@
 from fastapi import FastAPI
+from app.routers import medwood
 from app.routers import (
     ingest_router,
     harmonize_router,
     validate_router,
     iot_router,
     work_order_router,
-    blueprint_router,
+    blueprint_router
 )
 
 api = FastAPI(
@@ -14,6 +15,8 @@ api = FastAPI(
     description="Federated Data Integration Framework prototype"
 )
 
+# ---- medwood pipeline ----
+api.include_router(medwood.router, prefix="/fdif")
 # ---- FDIF pipeline ----
 api.include_router(ingest_router, prefix="/fdif")
 api.include_router(harmonize_router, prefix="/fdif")
