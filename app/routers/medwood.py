@@ -24,10 +24,13 @@ async def upload_medwood_dataset(
 
     for row in rows:
 
+        # STEP 1 — Harmonize
         canonical = harmonizer(row)
 
+        # STEP 2 — Validate
         validated = validate_supplier(canonical)
 
+        # STEP 3 — Create Blueprint instance
         if dataset == "supplierAccounts":
 
             result = create_supplier_instance(validated)
