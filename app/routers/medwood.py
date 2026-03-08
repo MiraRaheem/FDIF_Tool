@@ -53,8 +53,6 @@ async def upload_medwood_dataset(
                 "status": "error",
                 "error": str(e)
             })
-
-    # ⬇️ ADD THIS AT THE END OF THE FUNCTION
     return {
         "dataset": dataset,
         "rows_processed": len(results),
