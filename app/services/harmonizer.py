@@ -104,3 +104,18 @@ def harmonize_raw_work_order(raw: Dict[str, Any]) -> Dict[str, Any]:
         "processes": processes,
         "executions": []  # optional, empty for now
     }
+def harmonize_supplier_performance(row):
+
+    return {
+
+        "supplierId": row.get("Supplier ID"),
+
+        "rating": row.get("Rating"),
+
+        "leadTimeDays": row.get("Lead Time Days"),
+
+        "capacity": row.get("Capacity"),
+
+        "isCertified": row.get("Certified")
+
+    }
