@@ -83,3 +83,9 @@ def validate_supplier(canonical):
         raise ValueError("city is required")
 
     return canonical
+def validate_supplier_performance(data):
+
+    if not data.get("supplierId"):
+        raise ValueError("supplierId is required")
+
+    return data
