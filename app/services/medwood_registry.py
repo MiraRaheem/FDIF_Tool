@@ -1,10 +1,14 @@
-from app.services.harmonizer import harmonize_medwood_supplier
-
+from app.services.harmonizer import (
+    harmonize_medwood_supplier,
+    harmonize_supplier_performance
+)
 
 HARMONIZERS = {
-    "supplierAccounts": harmonize_medwood_supplier
-}
 
+    "supplierAccounts": harmonize_medwood_supplier,
+
+    "supplierPerformance": harmonize_supplier_performance
+}
 
 def get_harmonizer(dataset):
 
