@@ -159,35 +159,52 @@ def add_supplier_performance(canonical):
 
     supplier_id = str(canonical["supplierId"])
 
+    data_properties = [
+
+        {
+            "property": "hasTotalDeliveries",
+            "value": canonical.get("totalDeliveries")
+        },
+
+        {
+            "property": "hasDelayedDeliveries",
+            "value": canonical.get("delayedDeliveries")
+        },
+
+        {
+            "property": "hasDelayPercentage",
+            "value": canonical.get("delayPercentage")
+        },
+
+        {
+            "property": "hasCurrentEvaluation",
+            "value": canonical.get("currentEvaluation")
+        },
+
+        {
+            "property": "hasPreviousEvaluation",
+            "value": canonical.get("previousEvaluation")
+        }
+
+    ]
+
     payload = {
 
         "individualName": f"MaterialSupplier_{supplier_id}",
 
-        "dataProperties": [
-
-            {
-                "property": "hasRating",
-                "value": canonical.get("rating")
-            },
-
-            {
-                "property": "hasLeadTimeDays",
-                "value": canonical.get("leadTimeDays")
-            },
-
-            {
-                "property": "hasCapacity",
-                "value": canonical.get("capacity")
-            },
-
-            {
-                "property": "isCertified",
-                "value": canonical.get("isCertified")
-            }
-
-        ],
+        "dataProperties": clean_properties(data_properties),
 
         "objectProperties": []
     }
 
     return create_instance("MaterialSupplier", payload)
+    
+def clean_properties(properties):
+
+    cleaned = []
+
+    for p in properties:
+        if p["value"] is not None:
+            cleaned.append(p)
+
+    return cleaned
