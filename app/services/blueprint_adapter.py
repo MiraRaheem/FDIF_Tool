@@ -66,7 +66,46 @@ def create_supplier_instance(canonical):
             "supplierId": supplier_id
         }
 
-    payload = {
+    location_id = f"SupplierLocation_{supplier_id}"
+
+    # -------- Location instance --------
+
+    location_payload = {
+
+        "individualName": location_id,
+
+        "dataProperties": [
+
+            {
+                "property": "locationAddress",
+                "value": canonical["location"]["address"]
+            },
+
+            {
+                "property": "postalCode",
+                "value": canonical["location"]["postalCode"]
+            },
+
+            {
+                "property": "city",
+                "value": canonical["location"]["city"]
+            },
+
+            {
+                "property": "country",
+                "value": canonical["country"]
+            }
+
+        ],
+
+        "objectProperties": []
+    }
+
+    create_instance("Location", location_payload)
+
+    # -------- Supplier instance --------
+
+    supplier_payload = {
 
         "individualName": f"MaterialSupplier_{supplier_id}",
 
@@ -79,7 +118,12 @@ def create_supplier_instance(canonical):
 
             {
                 "property": "hasCountry",
-                "value": canonical["address"]["country"]
+                "value": canonical["country"]
+            },
+
+            {
+                "property": "rdfs:label",
+                "value": canonical["supplierName"]
             },
 
             {
@@ -99,7 +143,14 @@ def create_supplier_instance(canonical):
 
         ],
 
-        "objectProperties": []
+        "objectProperties": [
+
+            {
+                "property": "locatedAt",
+                "value": location_id
+            }
+
+        ]
     }
 
-    return create_instance("MaterialSupplier", payload)
+    return create_instance("MaterialSupplier", supplier_payload)
