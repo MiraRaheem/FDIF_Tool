@@ -154,3 +154,40 @@ def create_supplier_instance(canonical):
     }
 
     return create_instance("MaterialSupplier", supplier_payload)
+
+def add_supplier_performance(canonical):
+
+    supplier_id = str(canonical["supplierId"])
+
+    payload = {
+
+        "individualName": f"MaterialSupplier_{supplier_id}",
+
+        "dataProperties": [
+
+            {
+                "property": "hasRating",
+                "value": canonical.get("rating")
+            },
+
+            {
+                "property": "hasLeadTimeDays",
+                "value": canonical.get("leadTimeDays")
+            },
+
+            {
+                "property": "hasCapacity",
+                "value": canonical.get("capacity")
+            },
+
+            {
+                "property": "isCertified",
+                "value": canonical.get("isCertified")
+            }
+
+        ],
+
+        "objectProperties": []
+    }
+
+    return create_instance("MaterialSupplier", payload)
