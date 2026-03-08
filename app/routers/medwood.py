@@ -1,11 +1,9 @@
 from fastapi import APIRouter, UploadFile, File, Query
-from app.services.validator import validate_supplier_performance
-from app.services.blueprint_adapter import add_supplier_performance
 import pandas as pd
 
 from app.services.medwood_registry import get_harmonizer
-from app.services.validator import validate_supplier
-from app.services.blueprint_adapter import create_supplier_instance
+from app.services.validator import validate_supplier, validate_supplier_performance
+from app.services.blueprint_adapter import create_supplier_instance, add_supplier_performance
 
 router = APIRouter(tags=["medwood"])
 
@@ -26,25 +24,28 @@ async def upload_medwood_dataset(
 
     for row in rows:
 
-    canonical = harmonizer(row)
+        canonical = harmonizer(row)
 
-    if dataset == "supplierAccounts":
+        if dataset == "supplierAccounts":
 
-        validated = validate_supplier(canonical)
+            validated = validate_supplier(canonical)
 
-        result = create_supplier_instance(validated)
+            result = create_supplier_instance(validated)
 
-    elif dataset == "supplierPerformance":
+        elif dataset == "supplierPerformance":
 
-        validated = validate_supplier_performance(canonical)
+            validated = validate_supplier_performance(canonical)
 
-        result = add_supplier_performance(validated)
+            result = add_supplier_performance(validated)
 
-    results.append({
-        "canonical": canonical,
-        "blueprint_response": result
-    })
-    
+        else:
+            result = {"error": f"Unsupported dataset {dataset}"}
+
+        results.append({
+            "canonical": canonical,
+            "blueprint_response": result
+        })
+
     return {
         "dataset": dataset,
         "rows_processed": len(results),
