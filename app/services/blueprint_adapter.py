@@ -162,41 +162,24 @@ def add_supplier_performance(canonical):
     data_properties = [
 
         {
-            "property": "hasTotalDeliveries",
-            "value": canonical.get("totalDeliveries")
-        },
-
-        {
-            "property": "hasDelayedDeliveries",
-            "value": canonical.get("delayedDeliveries")
-        },
-
-        {
-            "property": "hasDelayPercentage",
-            "value": canonical.get("delayPercentage")
-        },
-
-        {
-            "property": "hasCurrentEvaluation",
+            "property": "hasRating",
             "value": canonical.get("currentEvaluation")
-        },
-
-        {
-            "property": "hasPreviousEvaluation",
-            "value": canonical.get("previousEvaluation")
         }
 
     ]
+
     data_properties = [
-    p for p in data_properties if p["value"] is not None]
+        p for p in data_properties if p["value"] is not None
+    ]
 
     payload = {
 
         "individualName": f"MaterialSupplier_{supplier_id}",
 
-        "dataProperties": clean_properties(data_properties),
+        "dataProperties": data_properties,
 
         "objectProperties": []
+
     }
 
     return create_instance("MaterialSupplier", payload)
