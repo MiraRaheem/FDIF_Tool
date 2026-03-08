@@ -9,17 +9,24 @@ def to_float(v):
 def harmonize_medwood_supplier(row):
 
     return {
+
         "supplierId": row.get("Cuenta de Cliente"),
+
         "supplierName": row.get("Razón Social"),
-        "address": {
-            "street": row.get("Calle"),
+
+        "country": row.get("País"),
+
+        "location": {
+
+            "address": row.get("Calle"),
+
             "postalCode": row.get("Código Postal"),
-            "city": row.get("Localidad"),
-            "province": row.get("Provincia"),
-            "autonomousCommunity": row.get("Comunidad Autónoma"),
-            "country": row.get("País")
+
+            "city": row.get("Localidad")
+
         }
     }
+    
 def harmonize_raw_iot(raw: Dict[str, Any]) -> Dict[str, Any]:
     """
     Step 2: Schema Harmonizer
