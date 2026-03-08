@@ -108,14 +108,18 @@ def harmonize_supplier_performance(row):
 
     return {
 
-        "supplierId": row.get("Supplier ID"),
+        "supplierId": row.get("Cuenta del proveedor"),
 
-        "rating": row.get("Rating"),
+        "supplierName": row.get("Nombre"),
 
-        "leadTimeDays": row.get("Lead Time Days"),
+        "totalDeliveries": row.get("Entregas"),
 
-        "capacity": row.get("Capacity"),
+        "delayedDeliveries": row.get("Retrasos"),
 
-        "isCertified": row.get("Certified")
+        "delayPercentage": row.get("Porcentaje de Retraso"),
+
+        "currentEvaluation": row.get("Evaluación"),
+
+        "previousEvaluation": row.get("Evaluación actual")
 
     }
