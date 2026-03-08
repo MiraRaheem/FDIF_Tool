@@ -26,22 +26,25 @@ async def upload_medwood_dataset(
 
     for row in rows:
 
-        # STEP 1 — Harmonize
-        canonical = harmonizer(row)
+    canonical = harmonizer(row)
 
-        # STEP 2 — Validate
+    if dataset == "supplierAccounts":
+
         validated = validate_supplier(canonical)
 
-        # STEP 3 — Create Blueprint instance
-        if dataset == "supplierAccounts":
+        result = create_supplier_instance(validated)
 
-            result = create_supplier_instance(validated)
+    elif dataset == "supplierPerformance":
 
-            results.append({
-                "canonical": validated,
-                "blueprint_response": result
-            })
+        validated = validate_supplier_performance(canonical)
 
+        result = add_supplier_performance(validated)
+
+    results.append({
+        "canonical": canonical,
+        "blueprint_response": result
+    })
+    
     return {
         "dataset": dataset,
         "rows_processed": len(results),
