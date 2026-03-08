@@ -74,9 +74,12 @@ def validate_supplier(canonical):
     if not canonical.get("supplierName"):
         raise ValueError("supplierName is required")
 
-    address = canonical.get("address", {})
-
-    if not address.get("country"):
+    if not canonical.get("country"):
         raise ValueError("country is required")
+
+    location = canonical.get("location", {})
+
+    if not location.get("city"):
+        raise ValueError("city is required")
 
     return canonical
