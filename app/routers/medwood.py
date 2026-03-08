@@ -1,4 +1,6 @@
 from fastapi import APIRouter, UploadFile, File, Query
+from app.services.validator import validate_supplier_performance
+from app.services.blueprint_adapter import add_supplier_performance
 import pandas as pd
 
 from app.services.medwood_registry import get_harmonizer
