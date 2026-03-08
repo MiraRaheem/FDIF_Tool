@@ -187,6 +187,8 @@ def add_supplier_performance(canonical):
         }
 
     ]
+    data_properties = [
+    p for p in data_properties if p["value"] is not None]
 
     payload = {
 
