@@ -8,9 +8,8 @@ api = FastAPI(
     version="0.1.0"
 )
 
-api.include_router(medwood.router, prefix="/fdif")
-api.include_router(budatec.router, prefix="/fdif")
-
+api.include_router(medwood, prefix="/fdif")
+api.include_router(budatec, prefix="/fdif")
 
 @api.get("/")
 def home():
