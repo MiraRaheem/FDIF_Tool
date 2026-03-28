@@ -12,6 +12,11 @@ def ingest_budatec(entity_type: str, body: Dict[str, Any]):
 
     try:
         raw = body.get("data", {})   # ✅ FIX HERE
+        
+        # 🔥 FORCE DICT
+        if isinstance(raw, str):
+            import json
+            raw = json.loads(raw)
 
         if entity_type == "supplier":
             canonical = harmonize_budatec_supplier(raw)
