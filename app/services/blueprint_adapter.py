@@ -184,6 +184,7 @@ def create_budatec_supplier(canonical):
             }
         ]
     }
+    return create_instance("MaterialSupplier", payload)
 
 def create_supplier_instance(canonical):
 
@@ -235,4 +236,4 @@ def create_supplier_instance(canonical):
 
 
 
-    return create_instance("MaterialSupplier", payload)
+    
