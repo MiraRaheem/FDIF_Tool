@@ -3,7 +3,7 @@ from typing import Dict, Any
 
 from app.services.harmonizer_budatec import harmonize_budatec_supplier
 from app.services.validator_budatec import validate_budatec_supplier
-from app.services.blueprint_adapter import create_supplier_instance
+from app.services.blueprint_adapter import create_budatec_supplier
 
 router = APIRouter(tags=["BUDATEC"])
 
@@ -16,7 +16,8 @@ def ingest_budatec(entity_type: str, body: Dict[str, Any]):
         if entity_type == "supplier":
             canonical = harmonize_budatec_supplier(raw)
             validated = validate_budatec_supplier(canonical)
-            result = create_supplier_instance(validated)
+            result = create_budatec_supplier(validated)
+            
 
         else:
             raise HTTPException(400, f"Unsupported entity_type: {entity_type}")
