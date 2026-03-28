@@ -16,6 +16,12 @@ def ingest_budatec(entity_type: str, body: Dict[str, Any]):
         if entity_type == "supplier":
             canonical = harmonize_budatec_supplier(raw)
             validated = validate_budatec_supplier(canonical)
+            print("\n--- DEBUG ---")
+            print("RAW TYPE:", type(raw))
+            print("CANONICAL TYPE:", type(canonical))
+            print("METADATA TYPE:", type(canonical.get("metadata")))
+            print("POLICY TYPE:", type(canonical.get("operationalPolicy")))
+            print("CANONICAL:", canonical)
             result = create_budatec_supplier(validated)
             
 
