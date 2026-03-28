@@ -8,24 +8,20 @@ from app.services.blueprint_adapter import create_supplier_instance
 router = APIRouter(tags=["BUDATEC"])
 
 @router.post("/budatec/{entity_type}")
-def ingest_budatec(entity_type: str, raw: Dict[str, Any]):
+def ingest_budatec(entity_type: str, body: Dict[str, Any]):
 
     try:
+        raw = body.get("data", {})   # ✅ FIX HERE
 
-        # ---- Step 1: Route by type ----
         if entity_type == "supplier":
             canonical = harmonize_budatec_supplier(raw)
             validated = validate_budatec_supplier(canonical)
             result = create_supplier_instance(validated)
 
         else:
-            raise HTTPException(
-                status_code=400,
-                detail=f"Unsupported entity_type: {entity_type}"
-            )
+            raise HTTPException(400, f"Unsupported entity_type: {entity_type}")
 
         return {
-            "entity": entity_type,
             "status": "success",
             "canonical": canonical,
             "blueprint": result
