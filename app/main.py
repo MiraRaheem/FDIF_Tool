@@ -21,6 +21,7 @@ api.include_router(medwood.router, prefix="/fdif")
 api.include_router(ingest_router, prefix="/fdif")
 api.include_router(harmonize_router, prefix="/fdif")
 api.include_router(validate_router, prefix="/fdif")
+api.include_router(budatec.router, prefix="/fdif")
 
 # ---- Domain / demo routes ----
 api.include_router(iot_router, prefix="/fdif")
