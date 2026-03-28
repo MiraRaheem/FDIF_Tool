@@ -70,6 +70,9 @@ def supplier_exists(supplier_id):
 
 def create_budatec_metadata(supplier_id, metadata):
 
+    if not isinstance(metadata, dict):
+        metadata = {}
+
     payload = {
         "individualName": f"SupplierMetadata_{supplier_id}",
         "dataProperties": clean_properties([
@@ -88,12 +91,14 @@ def create_budatec_metadata(supplier_id, metadata):
 
     return create_instance("SupplierMetadata", payload)
 
-
 # -----------------------------
 # Budatec Operational Policy
 # -----------------------------
 
 def create_budatec_policy(supplier_id, policy):
+
+    if not isinstance(policy, dict):
+        policy = {}
 
     payload = {
         "individualName": f"SupplierPolicy_{supplier_id}",
@@ -111,8 +116,7 @@ def create_budatec_policy(supplier_id, policy):
     }
 
     return create_instance("SupplierOperationalPolicy", payload)
-
-
+    
 # -----------------------------
 # Budatec Supplier (MAIN)
 # -----------------------------
