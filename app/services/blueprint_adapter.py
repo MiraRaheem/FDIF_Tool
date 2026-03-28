@@ -58,11 +58,17 @@ def supplier_exists(supplier_id):
     suppliers = get_existing_suppliers()
 
     for s in suppliers:
-        if s.get("hasSupplierID") == supplier_id:
+
+        # Case 1: string (most likely your case)
+        if isinstance(s, str) and supplier_id in s:
             return True
 
-    return False
+        # Case 2: dict (future-safe)
+        if isinstance(s, dict):
+            if s.get("hasSupplierID") == supplier_id:
+                return True
 
+    return False
 
 # -----------------------------
 # Budatec Metadata
