@@ -3,6 +3,7 @@ from typing import Dict, Any
 from fastapi import UploadFile, File
 import pandas as pd
 
+import math
 from app.services.harmonizer_budatec import harmonize_budatec_supplier
 from app.services.validator_budatec import validate_budatec_supplier
 from app.services.blueprint_adapter import create_budatec_supplier
@@ -53,6 +54,13 @@ async def upload_budatec_suppliers(file: UploadFile = File(...)):
     try:
         # ---- 1. Read Excel ----
         rows = extract_budatec_rows(file.file)
+        # 🔥 FIX NaN
+        def clean_nan(row):
+            return {
+                k: (None if isinstance(v, float) and math.isnan(v) else v)
+                for k, v in row.items()
+            }
+        rows = [clean_nan(r) for r in rows]
         results = []
 
         # ---- 2. Process each row ----
