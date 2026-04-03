@@ -1,27 +1,52 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, UploadFile, File
 from typing import Dict, Any
-from fastapi import UploadFile, File
 import pandas as pd
-
 import math
+import json
+
 from app.services.harmonizer_budatec import harmonize_budatec_supplier
 from app.services.validator_budatec import validate_budatec_supplier
 from app.services.blueprint_adapter import create_budatec_supplier
 
 router = APIRouter(tags=["BUDATEC"])
 
-import pandas as pd
 
-import pandas as pd
-import math
+# -----------------------------
+# Utils
+# -----------------------------
 
+def sanitize_id(value: str) -> str:
+    if not value:
+        return value
+
+    return (
+        str(value)
+        .strip()
+        .replace(" ", "_")
+        .replace("/", "_")
+        .replace("\\", "_")
+        .replace("(", "")
+        .replace(")", "")
+    )
+
+
+def clean_value(v):
+    if isinstance(v, float) and math.isnan(v):
+        return None
+    if isinstance(v, str):
+        return v.strip().strip('"')
+    return v
+
+
+# -----------------------------
+# Excel Extraction
+# -----------------------------
 
 def extract_budatec_rows(file):
 
-    # ---- 1. Read raw file ----
     df_raw = pd.read_excel(file, header=None)
 
-    # ---- 2. Find "Column Name:" row ----
+    # ---- find header row ----
     header_row_idx = None
     for i, row in df_raw.iterrows():
         if str(row[0]).strip() == "Column Name:":
@@ -29,18 +54,13 @@ def extract_budatec_rows(file):
             break
 
     if header_row_idx is None:
-        raise Exception("Could not find 'Column Name:' row")
+        raise Exception("Column Name row not found")
 
-    # ---- 3. Extract headers ----
-    headers = df_raw.iloc[header_row_idx].tolist()
-
-    # remove first cell ("Column Name:")
-    headers = headers[1:]
-
-    # remove junk columns (~ etc.)
+    # ---- extract headers ----
+    headers = df_raw.iloc[header_row_idx].tolist()[1:]
     headers = [h for h in headers if h not in [None, "~"]]
 
-    # ---- 4. Find data start ----
+    # ---- find data start ----
     data_start_idx = None
     for i, row in df_raw.iterrows():
         if "Start entering data below this line" in str(row[0]):
@@ -48,71 +68,55 @@ def extract_budatec_rows(file):
             break
 
     if data_start_idx is None:
-        raise Exception("Could not find data start")
+        raise Exception("Data start row not found")
 
-    # ---- 5. Extract data ----
+    # ---- extract data ----
     df_data = df_raw.iloc[data_start_idx:].copy()
-
-    # drop empty rows
     df_data = df_data.dropna(how="all")
 
-    # ---- 6. DROP ONLY FIRST COLUMN (blank one) ----
+    # drop first blank column
     df_data = df_data.iloc[:, 1:]
 
-    # trim to header length (avoid overflow columns)
+    # align columns
     df_data = df_data.iloc[:, :len(headers)]
-
     df_data.columns = headers
 
-    # ---- 7. Convert to dict ----
     rows = df_data.to_dict(orient="records")
 
-    # ---- 8. CLEAN rows ----
+    # ---- clean rows ----
     cleaned_rows = []
 
     for row in rows:
 
-        new_row = {}
+        new_row = {k: clean_value(v) for k, v in row.items()}
 
-        for k, v in row.items():
-
-            # fix NaN
-            if isinstance(v, float) and math.isnan(v):
-                v = None
-
-            # remove quotes
-            if isinstance(v, str):
-                v = v.strip().strip('"')
-
-            new_row[k] = v
-
-        # ---- 9. FIX ID ISSUE (THIS IS THE REAL FIX) ----
-        # If name is missing but supplier_name exists → use it
+        # FIX: generate ID if missing
         if not new_row.get("name") and new_row.get("supplier_name"):
             new_row["name"] = new_row["supplier_name"]
+
+        # sanitize ID early
+        if new_row.get("name"):
+            new_row["name"] = sanitize_id(new_row["name"])
 
         cleaned_rows.append(new_row)
 
     return cleaned_rows
-    
+
+
+# -----------------------------
+# Excel Upload Endpoint
+# -----------------------------
+
 @router.post("/budatec/upload")
 async def upload_budatec_suppliers(file: UploadFile = File(...)):
 
     try:
-        # ---- 1. Read Excel ----
         rows = extract_budatec_rows(file.file)
-        # 🔥 FIX NaN
-        def clean_nan(row):
-            return {
-                k: (None if isinstance(v, float) and math.isnan(v) else v)
-                for k, v in row.items()
-            }
-        rows = [clean_nan(r) for r in rows]
+
         results = []
 
-        # ---- 2. Process each row ----
         for i, row in enumerate(rows):
-            
+
             try:
                 canonical = harmonize_budatec_supplier(row)
                 validated = validate_budatec_supplier(canonical)
@@ -134,46 +138,42 @@ async def upload_budatec_suppliers(file: UploadFile = File(...)):
                     "error": str(row_error),
                     "raw": row
                 })
-            print(f"\n--- ROW {i} ---")
-            print("RAW:", row)
-            print("CANONICAL:", canonical)
 
         return {
             "status": "completed",
             "total_rows": len(rows),
             "processed": len(results),
-            "results": results[:10]  # preview only
+            "results": results[:10]  # preview
         }
 
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
 
+# -----------------------------
+# JSON Endpoint
+# -----------------------------
+
 @router.post("/budatec/{entity_type}")
 def ingest_budatec(entity_type: str, body: Dict[str, Any]):
 
     try:
-        raw = body.get("data", {})   # ✅ FIX HERE
-        
-        # 🔥 FORCE DICT
+        raw = body.get("data", {})
+
         if isinstance(raw, str):
-            import json
             raw = json.loads(raw)
 
-        if entity_type == "supplier":
-            canonical = harmonize_budatec_supplier(raw)
-            validated = validate_budatec_supplier(canonical)
-            print("\n--- DEBUG ---")
-            print("RAW TYPE:", type(raw))
-            print("CANONICAL TYPE:", type(canonical))
-            print("METADATA TYPE:", type(canonical.get("metadata")))
-            print("POLICY TYPE:", type(canonical.get("operationalPolicy")))
-            print("CANONICAL:", canonical)
-            result = create_budatec_supplier(validated)
-            
-
-        else:
+        if entity_type != "supplier":
             raise HTTPException(400, f"Unsupported entity_type: {entity_type}")
+
+        # sanitize ID early
+        if raw.get("name"):
+            raw["name"] = sanitize_id(raw["name"])
+
+        canonical = harmonize_budatec_supplier(raw)
+        validated = validate_budatec_supplier(canonical)
+
+        result = create_budatec_supplier(validated)
 
         return {
             "status": "success",
