@@ -12,42 +12,89 @@ router = APIRouter(tags=["BUDATEC"])
 
 import pandas as pd
 
+import pandas as pd
+import math
+
+
 def extract_budatec_rows(file):
 
-    # Read raw file WITHOUT header
+    # ---- 1. Read raw file ----
     df_raw = pd.read_excel(file, header=None)
-    # ---- 1. Find header row (Column Name) ----
+
+    # ---- 2. Find "Column Name:" row ----
     header_row_idx = None
     for i, row in df_raw.iterrows():
         if str(row[0]).strip() == "Column Name:":
             header_row_idx = i
             break
+
     if header_row_idx is None:
-        raise Exception("Could not find 'Column Name:' row in Excel")
-    # ---- 2. Extract actual column names ----
+        raise Exception("Could not find 'Column Name:' row")
+
+    # ---- 3. Extract headers ----
     headers = df_raw.iloc[header_row_idx].tolist()
-    # Remove first cell ("Column Name:")
+
+    # remove first cell ("Column Name:")
     headers = headers[1:]
-    # ---- 3. Data starts AFTER "Start entering data below this line" ----
+
+    # remove junk columns (~ etc.)
+    headers = [h for h in headers if h not in [None, "~"]]
+
+    # ---- 4. Find data start ----
     data_start_idx = None
     for i, row in df_raw.iterrows():
         if "Start entering data below this line" in str(row[0]):
             data_start_idx = i + 1
             break
-    if data_start_idx is None:
-        raise Exception("Could not find data start row")
-    # ---- 4. Slice data ----
-    df_data = df_raw.iloc[data_start_idx:].copy()
-    # Drop empty rows
-    df_data = df_data.dropna(how="all")
-    # Remove first column (always blank)
-    df_data = df_data.iloc[:, 1:]
-    # Apply headers
-    df_data.columns = headers
-    # Convert to dict
-    return df_data.to_dict(orient="records")
-    
 
+    if data_start_idx is None:
+        raise Exception("Could not find data start")
+
+    # ---- 5. Extract data ----
+    df_data = df_raw.iloc[data_start_idx:].copy()
+
+    # drop empty rows
+    df_data = df_data.dropna(how="all")
+
+    # ---- 6. DROP ONLY FIRST COLUMN (blank one) ----
+    df_data = df_data.iloc[:, 1:]
+
+    # trim to header length (avoid overflow columns)
+    df_data = df_data.iloc[:, :len(headers)]
+
+    df_data.columns = headers
+
+    # ---- 7. Convert to dict ----
+    rows = df_data.to_dict(orient="records")
+
+    # ---- 8. CLEAN rows ----
+    cleaned_rows = []
+
+    for row in rows:
+
+        new_row = {}
+
+        for k, v in row.items():
+
+            # fix NaN
+            if isinstance(v, float) and math.isnan(v):
+                v = None
+
+            # remove quotes
+            if isinstance(v, str):
+                v = v.strip().strip('"')
+
+            new_row[k] = v
+
+        # ---- 9. FIX ID ISSUE (THIS IS THE REAL FIX) ----
+        # If name is missing but supplier_name exists → use it
+        if not new_row.get("name") and new_row.get("supplier_name"):
+            new_row["name"] = new_row["supplier_name"]
+
+        cleaned_rows.append(new_row)
+
+    return cleaned_rows
+    
 @router.post("/budatec/upload")
 async def upload_budatec_suppliers(file: UploadFile = File(...)):
 
