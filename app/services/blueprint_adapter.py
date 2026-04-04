@@ -242,3 +242,52 @@ def create_budatec_supplier(canonical):
     }
 
     return create_instance("MaterialSupplier", supplier_payload)
+
+def create_supplier_instance(canonical):
+
+    supplier_id = str(canonical["supplierId"])
+
+    if supplier_exists(supplier_id):
+        return {
+            "status": "exists",
+            "supplierId": supplier_id
+        }
+
+    payload = {
+
+        "individualName": f"MaterialSupplier_{supplier_id}",
+
+        "dataProperties": [
+
+            {
+                "property": "hasSupplierID",
+                "value": supplier_id
+            },
+
+            {
+                "property": "hasCountry",
+                "value": canonical["address"]["country"]
+            },
+
+            {
+                "property": "hasCapacity",
+                "value": "0"
+            },
+
+            {
+                "property": "hasLeadTimeDays",
+                "value": "0"
+            },
+
+            {
+                "property": "hasPaymentTerms",
+                "value": "Other"
+            }
+
+        ],
+
+        "objectProperties": []
+    }
+
+    return create_instance("MaterialSupplier", payload)
+
