@@ -9,8 +9,23 @@ BASE_URL = "https://narrate-webapp-tcxs.onrender.com"
 # -----------------------------
 
 def clean_properties(properties):
-    return [p for p in properties if p["value"] is not None]
 
+    cleaned = []
+
+    for p in properties:
+        value = p["value"]
+
+        if value is None:
+            continue
+
+        value = serialize_value(value)
+
+        cleaned.append({
+            "property": p["property"],
+            "value": value
+        })
+
+    return cleaned
 
 def sanitize_id(value: str) -> str:
     if not value:
@@ -25,6 +40,13 @@ def sanitize_id(value: str) -> str:
         .replace("(", "")
         .replace(")", "")
     )
+
+def serialize_value(v):
+    from datetime import datetime
+
+    if isinstance(v, datetime):
+        return v.isoformat(sep=" ")
+    return v
 
 
 def create_instance(class_name, payload):
