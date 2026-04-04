@@ -185,11 +185,11 @@ def create_budatec_supplier(canonical):
 
         "objectProperties": [
             {
-                "property": "hasMetadata",
+                "property": "hasSupplierMetadata",
                 "value": f"SupplierMetadata_{supplier_id}"
             },
             {
-                "property": "hasOperationalPolicy",
+                "property": "hasSupplierPolicy",
                 "value": f"SupplierPolicy_{supplier_id}"
             }
         ]
