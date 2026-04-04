@@ -1,5 +1,6 @@
 import requests
 
+
 BASE_URL = "https://narrate-webapp-tcxs.onrender.com"
 
 
@@ -9,6 +10,21 @@ BASE_URL = "https://narrate-webapp-tcxs.onrender.com"
 
 def clean_properties(properties):
     return [p for p in properties if p["value"] is not None]
+
+
+def sanitize_id(value: str) -> str:
+    if not value:
+        return value
+
+    return (
+        str(value)
+        .strip()
+        .replace(" ", "_")
+        .replace("/", "_")
+        .replace("\\", "_")
+        .replace("(", "")
+        .replace(")", "")
+    )
 
 
 def create_instance(class_name, payload):
@@ -23,7 +39,6 @@ def create_instance(class_name, payload):
 
     print("\n--- Blueprint Call ---")
     print("Class:", class_name)
-    print("URL:", url)
     print("Payload:", payload)
     print("Status:", r.status_code)
     print("Response:", r.text)
@@ -43,14 +58,9 @@ def create_instance(class_name, payload):
 # -----------------------------
 
 def get_existing_suppliers():
-
     url = f"{BASE_URL}/api/MaterialSupplier"
-
     r = requests.get(url)
-
-    data = r.json()
-
-    return data.get("instances", [])
+    return r.json().get("instances", [])
 
 
 def supplier_exists(supplier_id):
@@ -59,98 +69,114 @@ def supplier_exists(supplier_id):
 
     for s in suppliers:
 
-        # Case 1: string (most likely your case)
         if isinstance(s, str) and supplier_id in s:
             return True
 
-        # Case 2: dict (future-safe)
         if isinstance(s, dict):
             if s.get("hasSupplierID") == supplier_id:
                 return True
 
     return False
 
+
 # -----------------------------
-# Budatec Metadata
+# Supplier Metadata (GENERIC CLASS, SUPPLIER CONTEXT)
 # -----------------------------
 
-def create_budatec_metadata(supplier_id, metadata):
+def create_supplier_metadata_instance(supplier_id, metadata):
 
     if not isinstance(metadata, dict):
         metadata = {}
 
+    metadata_id = f"SupplierMetadata_{supplier_id}"
+
     payload = {
-        "individualName": f"SupplierMetadata_{supplier_id}",
+        "individualName": metadata_id,
+
         "dataProperties": clean_properties([
-
-            {"property": "hasRecordOwner", "value": metadata.get("recordOwner")},
-            {"property": "hasCreationTimestamp", "value": metadata.get("creationTimestamp")},
-            {"property": "hasLastModifiedTimestamp", "value": metadata.get("lastModifiedTimestamp")},
-            {"property": "hasModifiedBy", "value": metadata.get("modifiedByUser")},
-            {"property": "hasDocumentStatus", "value": metadata.get("documentStatus")},
-            {"property": "hasRecordIndex", "value": metadata.get("recordIndex")},
-            {"property": "hasNamingSeries", "value": metadata.get("namingSeries")}
-
+            {"property": "recordOwner", "value": metadata.get("recordOwner")},
+            {"property": "creationTimestamp", "value": metadata.get("creationTimestamp")},
+            {"property": "lastModifiedTimestamp", "value": metadata.get("lastModifiedTimestamp")},
+            {"property": "modifiedByUser", "value": metadata.get("modifiedByUser")},
+            {"property": "documentStatus", "value": metadata.get("documentStatus")},
+            {"property": "recordIndex", "value": metadata.get("recordIndex")},
+            {"property": "namingSeries", "value": metadata.get("namingSeries")},
         ]),
-        "objectProperties": []
+
+        "objectProperties": [
+            {
+                # 🔥 CORRECT ONTOLOGY RELATION (inverse)
+                "property": "supplierMetadataOf",
+                "value": f"MaterialSupplier_{supplier_id}"
+            }
+        ]
     }
 
     return create_instance("SupplierMetadata", payload)
 
+
 # -----------------------------
-# Budatec Operational Policy
+# Supplier Operational Policy
 # -----------------------------
 
-def create_budatec_policy(supplier_id, policy):
+def create_supplier_policy_instance(supplier_id, policy):
 
     if not isinstance(policy, dict):
         policy = {}
 
-    payload = {
-        "individualName": f"SupplierPolicy_{supplier_id}",
-        "dataProperties": clean_properties([
+    policy_id = f"SupplierPolicy_{supplier_id}"
 
+    payload = {
+        "individualName": policy_id,
+
+        "dataProperties": clean_properties([
             {"property": "allowsInvoiceWithoutPO", "value": policy.get("allowInvoiceWithoutPO")},
             {"property": "allowsInvoiceWithoutReceipt", "value": policy.get("allowInvoiceWithoutReceipt")},
             {"property": "warnBeforeRFQ", "value": policy.get("warnRFQ")},
             {"property": "warnBeforePO", "value": policy.get("warnPO")},
             {"property": "preventRFQCreation", "value": policy.get("preventRFQ")},
-            {"property": "preventPOCreation", "value": policy.get("preventPO")}
-
+            {"property": "preventPOCreation", "value": policy.get("preventPO")},
         ]),
-        "objectProperties": []
+
+        "objectProperties": [
+            {
+                # 🔥 CORRECT ONTOLOGY RELATION (inverse)
+                "property": "operationalPolicyOf",
+                "value": f"MaterialSupplier_{supplier_id}"
+            }
+        ]
     }
 
     return create_instance("SupplierOperationalPolicy", payload)
-    
+
+
 # -----------------------------
-# Budatec Supplier (MAIN)
+# MAIN: Supplier Creation
 # -----------------------------
 
 def create_budatec_supplier(canonical):
 
-    supplier_id = str(canonical["supplierId"])
+    supplier_id = sanitize_id(canonical["supplierId"])
 
-    # ---- Check existence ----
+    # ---- existence check ----
     if supplier_exists(supplier_id):
         return {
             "status": "exists",
             "supplierId": supplier_id
         }
 
-    # ---- 1. Create Metadata ----
-    metadata_res = create_budatec_metadata(
+    # ---- create metadata ----
+    metadata_res = create_supplier_metadata_instance(
         supplier_id,
         canonical.get("metadata", {})
     )
 
-    # ---- 2. Create Policy ----
-    policy_res = create_budatec_policy(
+    # ---- create policy ----
+    policy_res = create_supplier_policy_instance(
         supplier_id,
         canonical.get("operationalPolicy", {})
     )
 
-    # 🚨 Stop if failed
     if "error" in str(metadata_res) or "error" in str(policy_res):
         return {
             "status": "error",
@@ -159,12 +185,11 @@ def create_budatec_supplier(canonical):
             "policy_response": policy_res
         }
 
-    # ---- 3. Create Supplier ----
-    payload = {
+    # ---- create supplier ----
+    supplier_payload = {
         "individualName": f"MaterialSupplier_{supplier_id}",
 
         "dataProperties": clean_properties([
-
             {"property": "hasSupplierID", "value": supplier_id},
             {"property": "hasSupplierName", "value": canonical.get("supplierName")},
             {"property": "hasCountry", "value": canonical.get("country")},
@@ -180,7 +205,6 @@ def create_budatec_supplier(canonical):
             {"property": "isSupplierDisabled", "value": canonical.get("isDisabled")},
             {"property": "isOnHold", "value": canonical.get("isOnHold")},
             {"property": "hasSupplierHoldType", "value": canonical.get("holdType")},
-
         ]),
 
         "objectProperties": [
@@ -194,56 +218,5 @@ def create_budatec_supplier(canonical):
             }
         ]
     }
-    return create_instance("MaterialSupplier", payload)
 
-def create_supplier_instance(canonical):
-
-    supplier_id = str(canonical["supplierId"])
-
-    if supplier_exists(supplier_id):
-        return {
-            "status": "exists",
-            "supplierId": supplier_id
-        }
-
-    payload = {
-
-        "individualName": f"MaterialSupplier_{supplier_id}",
-
-        "dataProperties": [
-
-            {
-                "property": "hasSupplierID",
-                "value": supplier_id
-            },
-
-            {
-                "property": "hasCountry",
-                "value": canonical["address"]["country"]
-            },
-
-            {
-                "property": "hasCapacity",
-                "value": "0"
-            },
-
-            {
-                "property": "hasLeadTimeDays",
-                "value": "0"
-            },
-
-            {
-                "property": "hasPaymentTerms",
-                "value": "Other"
-            }
-
-        ],
-
-        "objectProperties": []
-    }
-
-    return create_instance("MaterialSupplier", payload)
-
-
-
-    
+    return create_instance("MaterialSupplier", supplier_payload)
