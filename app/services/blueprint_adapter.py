@@ -50,9 +50,7 @@ def create_instance(class_name, payload):
 
     url = f"{BASE_URL}/api/{class_name}"
 
-    headers = {"Content-Type": "application/json"}
-
-    r = requests.post(url, json=payload, headers=headers)
+    r = requests.post(url, json=payload)
 
     print("\n--- Blueprint Call ---")
     print("Class:", class_name)
@@ -95,82 +93,12 @@ def supplier_exists(supplier_id):
 
 
 # -----------------------------
-# Metadata
+# CREATE ONLY (NO LINKS)
 # -----------------------------
 
-def create_supplier_metadata_instance(supplier_id, metadata):
+def create_supplier_instance_only(supplier_id, canonical):
 
     payload = {
-        "individualName": f"SupplierMetadata_{supplier_id}",
-
-        "dataProperties": clean_properties([
-            {"property": "recordOwner", "value": metadata.get("recordOwner")},
-            {"property": "creationTimestamp", "value": metadata.get("creationTimestamp")},
-            {"property": "lastModifiedTimestamp", "value": metadata.get("lastModifiedTimestamp")},
-            {"property": "modifiedByUser", "value": metadata.get("modifiedByUser")},
-            {"property": "documentStatus", "value": metadata.get("documentStatus")},
-            {"property": "recordIndex", "value": metadata.get("recordIndex")},
-            {"property": "namingSeries", "value": metadata.get("namingSeries")},
-        ]),
-
-        "objectProperties": [
-            {
-                "property": "supplierMetadataOf",
-                "value": f"MaterialSupplier_{supplier_id}"
-            }
-        ]
-    }
-
-    return create_instance("SupplierMetadata", payload)
-
-
-# -----------------------------
-# Policy
-# -----------------------------
-
-def create_supplier_policy_instance(supplier_id, policy):
-
-    payload = {
-        "individualName": f"SupplierPolicy_{supplier_id}",
-
-        "dataProperties": clean_properties([
-            {"property": "allowsInvoiceWithoutPO", "value": policy.get("allowInvoiceWithoutPO")},
-            {"property": "allowsInvoiceWithoutReceipt", "value": policy.get("allowInvoiceWithoutReceipt")},
-            {"property": "warnBeforeRFQ", "value": policy.get("warnRFQ")},
-            {"property": "warnBeforePO", "value": policy.get("warnPO")},
-            {"property": "preventRFQCreation", "value": policy.get("preventRFQ")},
-            {"property": "preventPOCreation", "value": policy.get("preventPO")},
-        ]),
-
-        "objectProperties": [
-            {
-                "property": "operationalPolicyOf",
-                "value": f"MaterialSupplier_{supplier_id}"
-            }
-        ]
-    }
-
-    return create_instance("SupplierOperationalPolicy", payload)
-
-
-# -----------------------------
-# MAIN: Budatec Supplier
-# -----------------------------
-
-def create_budatec_supplier(canonical):
-
-    supplier_id = sanitize_id(canonical["supplierId"])
-
-    if supplier_exists(supplier_id):
-        return {
-            "status": "exists",
-            "supplierId": supplier_id
-        }
-
-    # -----------------------------
-    # 1. CREATE SUPPLIER FIRST
-    # -----------------------------
-    supplier_payload = {
         "individualName": f"MaterialSupplier_{supplier_id}",
 
         "dataProperties": clean_properties([
@@ -194,42 +122,122 @@ def create_budatec_supplier(canonical):
         "objectProperties": []
     }
 
-    supplier_res = create_instance("MaterialSupplier", supplier_payload)
+    return create_instance("MaterialSupplier", payload)
 
-    # -----------------------------
-    # 2. CREATE METADATA
-    # -----------------------------
-    metadata_res = create_supplier_metadata_instance(
+
+def create_metadata_only(supplier_id, metadata):
+
+    payload = {
+        "individualName": f"SupplierMetadata_{supplier_id}",
+
+        "dataProperties": clean_properties([
+            {"property": "recordOwner", "value": metadata.get("recordOwner")},
+            {"property": "creationTimestamp", "value": metadata.get("creationTimestamp")},
+            {"property": "lastModifiedTimestamp", "value": metadata.get("lastModifiedTimestamp")},
+            {"property": "modifiedByUser", "value": metadata.get("modifiedByUser")},
+            {"property": "documentStatus", "value": metadata.get("documentStatus")},
+            {"property": "recordIndex", "value": metadata.get("recordIndex")},
+            {"property": "namingSeries", "value": metadata.get("namingSeries")},
+        ]),
+
+        "objectProperties": []
+    }
+
+    return create_instance("SupplierMetadata", payload)
+
+
+def create_policy_only(supplier_id, policy):
+
+    payload = {
+        "individualName": f"SupplierPolicy_{supplier_id}",
+
+        "dataProperties": clean_properties([
+            {"property": "allowsInvoiceWithoutPO", "value": policy.get("allowInvoiceWithoutPO")},
+            {"property": "allowsInvoiceWithoutReceipt", "value": policy.get("allowInvoiceWithoutReceipt")},
+            {"property": "warnBeforeRFQ", "value": policy.get("warnRFQ")},
+            {"property": "warnBeforePO", "value": policy.get("warnPO")},
+            {"property": "preventRFQCreation", "value": policy.get("preventRFQ")},
+            {"property": "preventPOCreation", "value": policy.get("preventPO")},
+        ]),
+
+        "objectProperties": []
+    }
+
+    return create_instance("SupplierOperationalPolicy", payload)
+
+
+# -----------------------------
+# LINKING (CRITICAL PART)
+# -----------------------------
+
+def link_supplier_graph(supplier_id):
+
+    supplier = f"MaterialSupplier_{supplier_id}"
+    metadata = f"SupplierMetadata_{supplier_id}"
+    policy = f"SupplierPolicy_{supplier_id}"
+
+    # Supplier → Metadata
+    create_instance("MaterialSupplier", {
+        "individualName": supplier,
+        "objectProperties": [
+            {"property": "hasSupplierMetadata", "value": metadata}
+        ]
+    })
+
+    # Supplier → Policy
+    create_instance("MaterialSupplier", {
+        "individualName": supplier,
+        "objectProperties": [
+            {"property": "hasSupplierPolicy", "value": policy}
+        ]
+    })
+
+    # Metadata → Supplier
+    create_instance("SupplierMetadata", {
+        "individualName": metadata,
+        "objectProperties": [
+            {"property": "supplierMetadataOf", "value": supplier}
+        ]
+    })
+
+    # Policy → Supplier
+    create_instance("SupplierOperationalPolicy", {
+        "individualName": policy,
+        "objectProperties": [
+            {"property": "operationalPolicyOf", "value": supplier}
+        ]
+    })
+
+
+# -----------------------------
+# MAIN: Budatec Supplier
+# -----------------------------
+
+def create_budatec_supplier(canonical):
+
+    supplier_id = sanitize_id(canonical["supplierId"])
+
+    if supplier_exists(supplier_id):
+        return {
+            "status": "exists",
+            "supplierId": supplier_id
+        }
+
+    # 1. CREATE ALL
+    supplier_res = create_supplier_instance_only(supplier_id, canonical)
+
+    metadata_res = create_metadata_only(
         supplier_id,
         canonical.get("metadata", {})
     )
 
-    # -----------------------------
-    # 3. CREATE POLICY
-    # -----------------------------
-    policy_res = create_supplier_policy_instance(
+    policy_res = create_policy_only(
         supplier_id,
         canonical.get("operationalPolicy", {})
     )
 
-    # -----------------------------
-    # 4. LINK BACK TO SUPPLIER
-    # -----------------------------
-    link_payload = {
-        "individualName": f"MaterialSupplier_{supplier_id}",
-        "objectProperties": [
-            {
-                "property": "hasSupplierMetadata",
-                "value": f"SupplierMetadata_{supplier_id}"
-            },
-            {
-                "property": "hasSupplierPolicy",
-                "value": f"SupplierPolicy_{supplier_id}"
-            }
-        ]
-    }
-
-    create_instance("MaterialSupplier", link_payload)
+    # 2. LINK ALL (🔥 THIS IS THE FIX)
+    link_supplier_graph(supplier_id)
 
     return {
         "status": "success",
@@ -240,7 +248,7 @@ def create_budatec_supplier(canonical):
 
 
 # -----------------------------
-# Medwood (KEEP THIS)
+# Medwood (KEEP)
 # -----------------------------
 
 def create_supplier_instance(canonical):
