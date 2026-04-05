@@ -43,10 +43,8 @@ def clean_value(v):
     if isinstance(v, float) and math.isnan(v):
         return None
     if isinstance(v, str):
-        return v.strip().strip('"')
+        return v.strip().strip('"').strip("'")
     return v
-
-
 # =========================================================
 # EXCEL EXTRACTION (GENERIC)
 # =========================================================
@@ -133,15 +131,16 @@ def normalize_supplier_row(row):
 
 def normalize_customer_row(row):
 
-    # generate ID if missing (ERP template behavior)
-    if not row.get("name") and row.get("customer_name"):
-        row["name"] = row["customer_name"]
-
+    # PRIORITY 1: use ERP ID (name column)
     if row.get("name"):
         row["name"] = sanitize_id(row["name"])
+        return row
+
+    # PRIORITY 2: fallback ONLY if name missing
+    if row.get("customer_name"):
+        row["name"] = sanitize_id(row["customer_name"])
 
     return row
-
 
 # =========================================================
 # GENERIC PROCESSOR (REUSABLE PIPELINE)
