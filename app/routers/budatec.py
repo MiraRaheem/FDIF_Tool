@@ -4,18 +4,25 @@ import pandas as pd
 import math
 import json
 
+# -----------------------------
+# Services
+# -----------------------------
+
 from app.services.harmonizer_budatec import harmonize_budatec_supplier
 from app.services.validator_budatec import validate_budatec_supplier
 from app.services.blueprint_adapter import create_budatec_supplier
+
 from app.services.harmonizer_budatec_customer import harmonize_budatec_customer
 from app.services.validator_budatec_customer import validate_budatec_customer
 from app.services.blueprint_adapter import create_budatec_customer
+
+
 router = APIRouter(tags=["BUDATEC"])
 
 
-# -----------------------------
-# Utils
-# -----------------------------
+# =========================================================
+# UTILS
+# =========================================================
 
 def sanitize_id(value: str) -> str:
     if not value:
@@ -40,15 +47,17 @@ def clean_value(v):
     return v
 
 
-# -----------------------------
-# Excel Extraction
-# -----------------------------
+# =========================================================
+# EXCEL EXTRACTION (GENERIC)
+# =========================================================
 
 def extract_budatec_rows(file):
 
     df_raw = pd.read_excel(file, header=None)
 
-    # ---- find header row ----
+    # -----------------------------
+    # FIND HEADER ROW
+    # -----------------------------
     header_row_idx = None
     for i, row in df_raw.iterrows():
         if str(row[0]).strip() == "Column Name:":
@@ -58,11 +67,18 @@ def extract_budatec_rows(file):
     if header_row_idx is None:
         raise Exception("Column Name row not found")
 
-    # ---- extract headers ----
-    headers = df_raw.iloc[header_row_idx].tolist()[1:]
+    # -----------------------------
+    # EXTRACT HEADERS (FIXED)
+    # -----------------------------
+    headers = df_raw.iloc[header_row_idx].tolist()
+    headers = headers[1:]  # remove first column label
+
+    # remove "~" separators
     headers = [h for h in headers if h not in [None, "~"]]
 
-    # ---- find data start ----
+    # -----------------------------
+    # FIND DATA START
+    # -----------------------------
     data_start_idx = None
     for i, row in df_raw.iterrows():
         if "Start entering data below this line" in str(row[0]):
@@ -72,57 +88,81 @@ def extract_budatec_rows(file):
     if data_start_idx is None:
         raise Exception("Data start row not found")
 
-    # ---- extract data ----
+    # -----------------------------
+    # EXTRACT DATA
+    # -----------------------------
     df_data = df_raw.iloc[data_start_idx:].copy()
     df_data = df_data.dropna(how="all")
 
     # drop first blank column
     df_data = df_data.iloc[:, 1:]
 
-    # align columns
+    # align with headers
     df_data = df_data.iloc[:, :len(headers)]
     df_data.columns = headers
 
     rows = df_data.to_dict(orient="records")
 
-    # ---- clean rows ----
+    # -----------------------------
+    # CLEAN VALUES ONLY
+    # -----------------------------
     cleaned_rows = []
 
     for row in rows:
-
         new_row = {k: clean_value(v) for k, v in row.items()}
-
-        # FIX: generate ID if missing
-        if not new_row.get("name") and new_row.get("supplier_name"):
-            new_row["name"] = new_row["supplier_name"]
-
-        # sanitize ID early
-        if new_row.get("name"):
-            new_row["name"] = sanitize_id(new_row["name"])
-
         cleaned_rows.append(new_row)
 
     return cleaned_rows
 
 
-# -----------------------------
-# Excel Upload Endpoint
-# -----------------------------
+# =========================================================
+# ENTITY NORMALIZATION (CRITICAL FIX)
+# =========================================================
 
-@router.post("/budatec/upload")
-async def upload_budatec_suppliers(file: UploadFile = File(...)):
+def normalize_supplier_row(row):
 
-    try:
-        rows = extract_budatec_rows(file.file)
+    # generate ID if missing
+    if not row.get("name") and row.get("supplier_name"):
+        row["name"] = row["supplier_name"]
 
-        results = []
+    if row.get("name"):
+        row["name"] = sanitize_id(row["name"])
 
-        for i, row in enumerate(rows):
+    return row
 
-            try:
+
+def normalize_customer_row(row):
+
+    # generate ID if missing (ERP template behavior)
+    if not row.get("name") and row.get("customer_name"):
+        row["name"] = row["customer_name"]
+
+    if row.get("name"):
+        row["name"] = sanitize_id(row["name"])
+
+    return row
+
+
+# =========================================================
+# GENERIC PROCESSOR (REUSABLE PIPELINE)
+# =========================================================
+
+def process_upload(rows, entity_type):
+
+    results = []
+
+    for i, row in enumerate(rows):
+
+        try:
+            # -----------------------------
+            # SUPPLIER FLOW
+            # -----------------------------
+            if entity_type == "supplier":
+
+                row = normalize_supplier_row(row)
+
                 canonical = harmonize_budatec_supplier(row)
                 validated = validate_budatec_supplier(canonical)
-
                 blueprint_res = create_budatec_supplier(validated)
 
                 results.append({
@@ -132,43 +172,15 @@ async def upload_budatec_suppliers(file: UploadFile = File(...)):
                     "blueprint": blueprint_res
                 })
 
-            except Exception as row_error:
+            # -----------------------------
+            # CUSTOMER FLOW
+            # -----------------------------
+            elif entity_type == "customer":
 
-                results.append({
-                    "row": i,
-                    "status": "error",
-                    "error": str(row_error),
-                    "raw": row
-                })
+                row = normalize_customer_row(row)
 
-        return {
-            "status": "completed",
-            "total_rows": len(rows),
-            "processed": len(results),
-            "results": results[:10]  # preview
-        }
-
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
-
-@router.post("/budatec/customer/upload")
-async def upload_budatec_customers(file: UploadFile = File(...)):
-
-    try:
-        rows = extract_budatec_rows(file.file)
-
-        results = []
-
-        for i, row in enumerate(rows):
-
-            try:
-                # -------- STEP 1: Harmonize --------
                 canonical = harmonize_budatec_customer(row)
-
-                # -------- STEP 2: Validate --------
                 validated = validate_budatec_customer(canonical)
-
-                # -------- STEP 3: Blueprint --------
                 blueprint_res = create_budatec_customer(validated)
 
                 results.append({
@@ -178,28 +190,68 @@ async def upload_budatec_customers(file: UploadFile = File(...)):
                     "blueprint": blueprint_res
                 })
 
-            except Exception as row_error:
+            else:
+                raise Exception(f"Unsupported entity_type: {entity_type}")
 
-                results.append({
-                    "row": i,
-                    "status": "error",
-                    "error": str(row_error),
-                    "raw": row
-                })
+        except Exception as row_error:
+
+            results.append({
+                "row": i,
+                "status": "error",
+                "error": str(row_error),
+                "raw": row
+            })
+
+    return results
+
+
+# =========================================================
+# EXCEL ENDPOINTS
+# =========================================================
+
+@router.post("/budatec/upload")
+async def upload_budatec_suppliers(file: UploadFile = File(...)):
+
+    try:
+        rows = extract_budatec_rows(file.file)
+
+        results = process_upload(rows, "supplier")
 
         return {
             "status": "completed",
+            "entity": "supplier",
             "total_rows": len(rows),
             "processed": len(results),
-            "results": results[:10]  # preview
+            "results": results[:10]
         }
 
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
-        
-# -----------------------------
-# JSON Endpoint
-# -----------------------------
+
+
+@router.post("/budatec/customer/upload")
+async def upload_budatec_customers(file: UploadFile = File(...)):
+
+    try:
+        rows = extract_budatec_rows(file.file)
+
+        results = process_upload(rows, "customer")
+
+        return {
+            "status": "completed",
+            "entity": "customer",
+            "total_rows": len(rows),
+            "processed": len(results),
+            "results": results[:10]
+        }
+
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+# =========================================================
+# JSON INGEST ENDPOINT
+# =========================================================
 
 @router.post("/budatec/{entity_type}")
 def ingest_budatec(entity_type: str, body: Dict[str, Any]):
@@ -210,20 +262,17 @@ def ingest_budatec(entity_type: str, body: Dict[str, Any]):
         if isinstance(raw, str):
             raw = json.loads(raw)
 
-        # -----------------------------
-        # SANITIZE ID EARLY
-        # -----------------------------
+        # sanitize ID early
         if raw.get("name"):
             raw["name"] = sanitize_id(raw["name"])
 
         # -----------------------------
-        # SUPPLIER FLOW
+        # SUPPLIER
         # -----------------------------
         if entity_type == "supplier":
 
             canonical = harmonize_budatec_supplier(raw)
             validated = validate_budatec_supplier(canonical)
-
             result = create_budatec_supplier(validated)
 
             return {
@@ -234,13 +283,12 @@ def ingest_budatec(entity_type: str, body: Dict[str, Any]):
             }
 
         # -----------------------------
-        # CUSTOMER FLOW
+        # CUSTOMER
         # -----------------------------
         elif entity_type == "customer":
 
             canonical = harmonize_budatec_customer(raw)
             validated = validate_budatec_customer(canonical)
-
             result = create_budatec_customer(validated)
 
             return {
@@ -251,7 +299,7 @@ def ingest_budatec(entity_type: str, body: Dict[str, Any]):
             }
 
         # -----------------------------
-        # UNKNOWN ENTITY
+        # INVALID
         # -----------------------------
         else:
             raise HTTPException(
