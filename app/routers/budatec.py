@@ -7,7 +7,9 @@ import json
 from app.services.harmonizer_budatec import harmonize_budatec_supplier
 from app.services.validator_budatec import validate_budatec_supplier
 from app.services.blueprint_adapter import create_budatec_supplier
-
+from app.services.harmonizer_budatec_customer import harmonize_budatec_customer
+from app.services.validator_budatec_customer import validate_budatec_customer
+from app.services.blueprint_adapter import create_budatec_customer
 router = APIRouter(tags=["BUDATEC"])
 
 
@@ -180,6 +182,26 @@ def ingest_budatec(entity_type: str, body: Dict[str, Any]):
             "canonical": canonical,
             "blueprint": result
         }
+            pass
+        
+        elif entity_type == "customer":
+
+            if raw.get("name"):
+                raw["name"] = sanitize_id(raw["name"])
+
+            canonical = harmonize_budatec_customer(raw)
+            validated = validate_budatec_customer(canonical)
+
+            result = create_budatec_customer(validated)
+
+            return {
+                "status": "success",
+                "canonical": canonical,
+                "blueprint": result
+            }
+
+        else:
+            raise HTTPException(400, f"Unsupported entity_type: {entity_type}")
 
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
