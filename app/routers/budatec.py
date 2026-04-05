@@ -151,7 +151,52 @@ async def upload_budatec_suppliers(file: UploadFile = File(...)):
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
+@router.post("/budatec/customer/upload")
+async def upload_budatec_customers(file: UploadFile = File(...)):
 
+    try:
+        rows = extract_budatec_rows(file.file)
+
+        results = []
+
+        for i, row in enumerate(rows):
+
+            try:
+                # -------- STEP 1: Harmonize --------
+                canonical = harmonize_budatec_customer(row)
+
+                # -------- STEP 2: Validate --------
+                validated = validate_budatec_customer(canonical)
+
+                # -------- STEP 3: Blueprint --------
+                blueprint_res = create_budatec_customer(validated)
+
+                results.append({
+                    "row": i,
+                    "status": "success",
+                    "customerId": validated.get("customerId"),
+                    "blueprint": blueprint_res
+                })
+
+            except Exception as row_error:
+
+                results.append({
+                    "row": i,
+                    "status": "error",
+                    "error": str(row_error),
+                    "raw": row
+                })
+
+        return {
+            "status": "completed",
+            "total_rows": len(rows),
+            "processed": len(results),
+            "results": results[:10]  # preview
+        }
+
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+        
 # -----------------------------
 # JSON Endpoint
 # -----------------------------
