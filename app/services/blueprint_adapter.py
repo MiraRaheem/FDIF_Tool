@@ -86,6 +86,50 @@ def update_instance(class_name, instance_id, payload):
     except:
         return {"status": "error", "response": r.text}
 
+def create_customer_only(customer_id, canonical):
+
+    payload = {
+        "individualName": f"Customer_{customer_id}",
+        "dataProperties": clean_properties([
+            {"property": "hasCustomerID", "value": customer_id},
+            {"property": "hasCustomerName", "value": canonical.get("customerName")},
+            {"property": "hasCustomerType", "value": canonical.get("customerType")},
+
+            {"property": "hasCustomerEmail", "value": canonical.get("email")},
+            {"property": "hasCustomerPhoneNumber", "value": canonical.get("phoneNumber")},
+
+            {"property": "hasCommissionRate", "value": canonical.get("commissionRate")},
+
+            {"property": "isInternalCustomer", "value": canonical.get("isInternalCustomer")},
+            {"property": "isFrozenCustomer", "value": canonical.get("isFrozenCustomer")},
+            {"property": "isCustomerDisabled", "value": canonical.get("isCustomerDisabled")},
+
+            {"property": "requiresSalesOrder", "value": canonical.get("requiresSalesOrder")},
+            {"property": "requiresDeliveryNote", "value": canonical.get("requiresDeliveryNote")},
+        ]),
+        "objectProperties": []
+    }
+
+    return create_instance("Customer", payload)
+
+def create_customer_metadata(customer_id, metadata):
+
+    payload = {
+        "individualName": f"CustomerMetadata_{customer_id}",
+        "dataProperties": clean_properties([
+            {"property": "recordOwner", "value": metadata.get("recordOwner")},
+            {"property": "creationTimestamp", "value": metadata.get("creationTimestamp")},
+            {"property": "lastModifiedTimestamp", "value": metadata.get("lastModifiedTimestamp")},
+            {"property": "modifiedByUser", "value": metadata.get("modifiedByUser")},
+            {"property": "documentStatus", "value": metadata.get("documentStatus")},
+            {"property": "recordIndex", "value": metadata.get("recordIndex")},
+            {"property": "namingSeries", "value": metadata.get("namingSeries")},
+        ]),
+        "objectProperties": []
+    }
+
+    return create_instance("CustomerMetadata", payload)
+    
 
 # -----------------------------
 # Supplier existence
@@ -104,6 +148,27 @@ def supplier_exists(supplier_id):
         if isinstance(s, str) and supplier_id in s:
             return True
         if isinstance(s, dict) and s.get("hasSupplierID") == supplier_id:
+            return True
+
+    return False
+
+# -----------------------------
+# Customer existence
+# -----------------------------
+
+def get_existing_customers():
+    r = requests.get(f"{BASE_URL}/api/Customer")
+    return r.json().get("instances", [])
+
+
+def customer_exists(customer_id):
+
+    customers = get_existing_customers()
+
+    for c in customers:
+        if isinstance(c, str) and customer_id in c:
+            return True
+        if isinstance(c, dict) and c.get("hasCustomerID") == customer_id:
             return True
 
     return False
@@ -209,6 +274,22 @@ def link_supplier_graph(supplier_id):
         ]
     })
 
+def link_customer_graph(customer_id):
+
+    customer = f"Customer_{customer_id}"
+    metadata = f"CustomerMetadata_{customer_id}"
+
+    update_instance("Customer", customer, {
+        "objectProperties": [
+            {"property": "hasCustomerMetadata", "value": metadata}
+        ]
+    })
+
+    update_instance("CustomerMetadata", metadata, {
+        "objectProperties": [
+            {"property": "customerMetadataOf", "value": customer}
+        ]
+    })
 
 # -----------------------------
 # MAIN: Budatec Supplier
@@ -237,7 +318,26 @@ def create_budatec_supplier(canonical):
         "supplierId": supplier_id
     }
 
+def create_budatec_customer(canonical):
 
+    customer_id = sanitize_id(canonical["customerId"])
+
+    if customer_exists(customer_id):
+        return {
+            "status": "exists",
+            "customerId": customer_id
+        }
+
+    create_customer_only(customer_id, canonical)
+    create_customer_metadata(customer_id, canonical.get("metadata", {}))
+
+    link_customer_graph(customer_id)
+
+    return {
+        "status": "success",
+        "customerId": customer_id
+    }
+    
 # -----------------------------
 # Medwood (UNCHANGED)
 # -----------------------------
