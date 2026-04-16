@@ -9,7 +9,7 @@ app = FastAPI(
 )
 
 # -------- ROUTERS --------
-
+app.include_router(medwood, prefix="/fdif")
 # Budatec (module router)
 app.include_router(budatec, prefix="/fdif")
 
