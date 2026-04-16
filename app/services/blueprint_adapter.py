@@ -8,6 +8,14 @@ BASE_URL = "https://narrate-webapp-tcxs.onrender.com"
 # Utils
 # -----------------------------
 
+# In-memory cache (simple + fast)
+INSTANCE_CACHE = {
+    "Machine": set(),
+    "ProductionMonitoringSensor": set(),
+    "ProductionMetric": set(),
+    "ProductionSensorObservation": set()
+}
+
 def sanitize_id(value: str) -> str:
     if not value:
         return value
@@ -46,6 +54,39 @@ def clean_properties(properties):
     return cleaned
 
 
+def instance_exists(class_name, individual_name):
+
+    # 1. Check cache (FAST)
+    if individual_name in INSTANCE_CACHE.get(class_name, set()):
+        return True
+
+    # 2. Check Blueprint API (SLOW fallback)
+    r = requests.get(f"{BASE_URL}/api/{class_name}")
+    instances = r.json().get("instances", [])
+
+    for inst in instances:
+        if isinstance(inst, str) and individual_name in inst:
+            INSTANCE_CACHE[class_name].add(individual_name)
+            return True
+
+    return False
+
+
+def get_or_create(class_name, individual_name, payload):
+
+    if instance_exists(class_name, individual_name):
+        return {"status": "exists", "id": individual_name}
+
+    create_instance(class_name, payload)
+
+    # update cache
+    INSTANCE_CACHE[class_name].add(individual_name)
+
+    return {"status": "created", "id": individual_name}
+
+
+def event_exists(event_id):
+    return instance_exists("ProductionSensorObservation", event_id)
 # -----------------------------
 # API Calls
 # -----------------------------
@@ -382,34 +423,43 @@ def create_frank_event(canonical):
     metric_id = f"Metric_{event_type}"
 
     # =============================
-    # 1. CREATE MACHINE
+    # 0. IDEMPOTENCY CHECK
     # =============================
-    create_instance("Machine", {
+    if event_exists(event_id):
+        return {
+            "status": "exists",
+            "eventId": event_id
+        }
+
+    # =============================
+    # 1. MACHINE (REUSED)
+    # =============================
+    get_or_create("Machine", machine_id_clean, {
         "individualName": machine_id_clean,
         "dataProperties": [],
         "objectProperties": []
     })
 
     # =============================
-    # 2. CREATE SENSOR
+    # 2. SENSOR (REUSED)
     # =============================
-    create_instance("ProductionMonitoringSensor", {
+    get_or_create("ProductionMonitoringSensor", sensor_id, {
         "individualName": sensor_id,
         "dataProperties": [],
         "objectProperties": []
     })
 
     # =============================
-    # 3. CREATE METRIC
+    # 3. METRIC (REUSED)
     # =============================
-    create_instance("ProductionMetric", {
+    get_or_create("ProductionMetric", metric_id, {
         "individualName": metric_id,
         "dataProperties": [],
         "objectProperties": []
     })
 
     # =============================
-    # 4. CREATE OBSERVATION
+    # 4. OBSERVATION (NEW ONLY)
     # =============================
     create_instance("ProductionSensorObservation", {
         "individualName": event_id,
@@ -422,55 +472,44 @@ def create_frank_event(canonical):
         "objectProperties": []
     })
 
-    # =============================
-    # 5. FORWARD RELATIONSHIPS
-    # =============================
-
-    # Observation → Sensor
-    update_instance("ProductionSensorObservation", event_id, {
-        "objectProperties": [
-            {"property": "productionObservedBy", "value": sensor_id}
-        ]
-    })
-
-    # Sensor → Metric
-    update_instance("ProductionMonitoringSensor", sensor_id, {
-        "objectProperties": [
-            {"property": "monitorsProdMetric", "value": metric_id}
-        ]
-    })
-
-    # Sensor → Machine
-    update_instance("ProductionMonitoringSensor", sensor_id, {
-        "objectProperties": [
-            {"property": "observesMachine", "value": machine_id_clean}
-        ]
-    })
+    INSTANCE_CACHE["ProductionSensorObservation"].add(event_id)
 
     # =============================
-    # 6. INVERSE RELATIONSHIPS
+    # 5. RELATIONSHIPS (SAFE)
     # =============================
 
-    # Sensor ← Observation
-    update_instance("ProductionMonitoringSensor", sensor_id, {
-        "objectProperties": [
-            {"property": "isSensorOfObservation", "value": event_id}
-        ]
-    })
+    def safe_link(class_name, individual, prop, value):
+        update_instance(class_name, individual, {
+            "objectProperties": [
+                {"property": prop, "value": value}
+            ]
+        })
 
-    # Metric ← Sensor
-    update_instance("ProductionMetric", metric_id, {
-        "objectProperties": [
-            {"property": "isMonitoredBy", "value": sensor_id}
-        ]
-    })
+    # Forward
+    safe_link("ProductionSensorObservation", event_id, "productionObservedBy", sensor_id)
+    safe_link("ProductionMonitoringSensor", sensor_id, "monitorsProdMetric", metric_id)
+    safe_link("ProductionMonitoringSensor", sensor_id, "observesMachine", machine_id_clean)
 
-    # Machine ← Sensor
-    update_instance("Machine", machine_id_clean, {
-        "objectProperties": [
-            {"property": "isObservedBySensor", "value": sensor_id}
-        ]
-    })
+    # Inverse
+    safe_link("ProductionMonitoringSensor", sensor_id, "isSensorOfObservation", event_id)
+    safe_link("ProductionMetric", metric_id, "isMonitoredBy", sensor_id)
+    safe_link("Machine", machine_id_clean, "isObservedBySensor", sensor_id)
+
+    # =============================
+    # 6. OPTIONAL: Maintenance Event
+    # =============================
+    if canonical.get("machineError"):
+
+        maint_id = f"Maintenance_{canonical['machineError']}_{timestamp}"
+
+        get_or_create("MaintenanceEvent", maint_id, {
+            "individualName": maint_id,
+            "dataProperties": [],
+            "objectProperties": []
+        })
+
+        safe_link("MaintenanceEvent", maint_id, "affectsMachine", machine_id_clean)
+        safe_link("Machine", machine_id_clean, "isAffectedBy", maint_id)
 
     return {
         "status": "success",
