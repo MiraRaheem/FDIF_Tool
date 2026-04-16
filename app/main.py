@@ -4,7 +4,7 @@ from app.routers import medwood
 from app.routers import budatec  
 from app.routers.frank import router as frank_router
 
-api.include_router(frank_router)
+app.include_router(frank_router)
 
 api = FastAPI(
     title="FDIF PoC",
