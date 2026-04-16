@@ -365,3 +365,114 @@ def create_supplier_instance(canonical):
     }
 
     return create_instance("MaterialSupplier", payload)
+
+
+
+
+def create_frank_event(canonical):
+
+    event_type = canonical["eventType"]
+    timestamp = canonical["timestamp"]
+    machine_id = canonical["machineId"]
+
+    # -------- IDs --------
+    event_id = f"Observation_{event_type}_{timestamp}"
+    sensor_id = f"Sensor_{machine_id}"
+    machine_id_clean = f"Machine_{machine_id}"
+    metric_id = f"Metric_{event_type}"
+
+    # =============================
+    # 1. CREATE MACHINE
+    # =============================
+    create_instance("Machine", {
+        "individualName": machine_id_clean,
+        "dataProperties": [],
+        "objectProperties": []
+    })
+
+    # =============================
+    # 2. CREATE SENSOR
+    # =============================
+    create_instance("ProductionMonitoringSensor", {
+        "individualName": sensor_id,
+        "dataProperties": [],
+        "objectProperties": []
+    })
+
+    # =============================
+    # 3. CREATE METRIC
+    # =============================
+    create_instance("ProductionMetric", {
+        "individualName": metric_id,
+        "dataProperties": [],
+        "objectProperties": []
+    })
+
+    # =============================
+    # 4. CREATE OBSERVATION
+    # =============================
+    create_instance("ProductionSensorObservation", {
+        "individualName": event_id,
+        "dataProperties": clean_properties([
+            {"property": "hasTimestamp", "value": timestamp},
+            {"property": "hasEventType", "value": event_type},
+            {"property": "hasMachineError", "value": canonical.get("machineError")},
+            {"property": "hasNozzleOperationTime", "value": canonical.get("nozzleOperationTime")},
+        ]),
+        "objectProperties": []
+    })
+
+    # =============================
+    # 5. FORWARD RELATIONSHIPS
+    # =============================
+
+    # Observation → Sensor
+    update_instance("ProductionSensorObservation", event_id, {
+        "objectProperties": [
+            {"property": "productionObservedBy", "value": sensor_id}
+        ]
+    })
+
+    # Sensor → Metric
+    update_instance("ProductionMonitoringSensor", sensor_id, {
+        "objectProperties": [
+            {"property": "monitorsProdMetric", "value": metric_id}
+        ]
+    })
+
+    # Sensor → Machine
+    update_instance("ProductionMonitoringSensor", sensor_id, {
+        "objectProperties": [
+            {"property": "observesMachine", "value": machine_id_clean}
+        ]
+    })
+
+    # =============================
+    # 6. INVERSE RELATIONSHIPS
+    # =============================
+
+    # Sensor ← Observation
+    update_instance("ProductionMonitoringSensor", sensor_id, {
+        "objectProperties": [
+            {"property": "isSensorOfObservation", "value": event_id}
+        ]
+    })
+
+    # Metric ← Sensor
+    update_instance("ProductionMetric", metric_id, {
+        "objectProperties": [
+            {"property": "isMonitoredBy", "value": sensor_id}
+        ]
+    })
+
+    # Machine ← Sensor
+    update_instance("Machine", machine_id_clean, {
+        "objectProperties": [
+            {"property": "isObservedBySensor", "value": sensor_id}
+        ]
+    })
+
+    return {
+        "status": "success",
+        "eventId": event_id
+    }
