@@ -1,7 +1,8 @@
 from fastapi import FastAPI
 
 from app.routers import medwood
-from app.routers import budatec   # ← your new router
+from app.routers import budatec  
+from app.routers import frank
 
 api = FastAPI(
     title="FDIF PoC",
@@ -10,6 +11,7 @@ api = FastAPI(
 
 api.include_router(medwood, prefix="/fdif")
 api.include_router(budatec, prefix="/fdif")
+api.include_router(frank, prefix="/fdif")
 
 @api.get("/")
 def home():
