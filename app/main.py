@@ -9,12 +9,14 @@ app = FastAPI(
 )
 
 # -------- ROUTERS --------
-app.include_router(medwood, prefix="/fdif")
-# Budatec (module router)
-app.include_router(budatec, prefix="/fdif")
+# Budatec
+app.include_router(budatec_router, prefix="/fdif")
 
-# Frank (already has prefix inside)
+# Frank (already has /fdif/frank inside)
 app.include_router(frank_router)
+
+# Medwood (same logic as Budatec unless you added prefix inside it)
+app.include_router(medwood_router, prefix="/fdif")
 
 # -------- HEALTH --------
 @app.get("/")
