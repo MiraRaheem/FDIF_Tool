@@ -1,7 +1,9 @@
 from fastapi import FastAPI
 
-from app.routers import budatec
+
 from app.routers.frank import router as frank_router
+from app.routers.budatec import router as budatec_router
+from app.routers.medwood import router as medwood_router
 
 app = FastAPI(
     title="FDIF PoC",
