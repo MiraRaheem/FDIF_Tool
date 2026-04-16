@@ -423,16 +423,16 @@ def create_frank_event(canonical):
     metric_id = f"Metric_{event_type}"
 
     # =============================
-    # 0. IDEMPOTENCY CHECK
+    # 0. IDEMPOTENCY
     # =============================
-    if event_exists(event_id):
+    if instance_exists("ProductionSensorObservation", event_id):
         return {
             "status": "exists",
             "eventId": event_id
         }
 
     # =============================
-    # 1. MACHINE (REUSED)
+    # 1. MACHINE
     # =============================
     get_or_create("Machine", machine_id_clean, {
         "individualName": machine_id_clean,
@@ -441,7 +441,7 @@ def create_frank_event(canonical):
     })
 
     # =============================
-    # 2. SENSOR (REUSED)
+    # 2. SENSOR
     # =============================
     get_or_create("ProductionMonitoringSensor", sensor_id, {
         "individualName": sensor_id,
@@ -450,7 +450,7 @@ def create_frank_event(canonical):
     })
 
     # =============================
-    # 3. METRIC (REUSED)
+    # 3. METRIC (FIXED)
     # =============================
     get_or_create("ProductionMetric", metric_id, {
         "individualName": metric_id,
@@ -459,25 +459,43 @@ def create_frank_event(canonical):
     })
 
     # =============================
-    # 4. OBSERVATION (NEW ONLY)
+    # 4. BUILD OBSERVATION VALUES
+    # =============================
+    observed_values = [
+        canonical.get("storageTemperature"),
+        canonical.get("storageHumidity"),
+        canonical.get("averagePowerConsumption"),
+        canonical.get("compressedAirInput"),
+        canonical.get("noiseChillerLevel"),
+        canonical.get("operatingTemperature"),
+        canonical.get("powerPeakConsumption")
+    ]
+
+    data_props = [
+        {"property": "observationTimestamp", "value": timestamp}
+    ]
+
+    for val in observed_values:
+        if val is not None:
+            data_props.append({
+                "property": "observedValue",
+                "value": float(val)
+            })
+
+    # =============================
+    # 5. CREATE OBSERVATION
     # =============================
     create_instance("ProductionSensorObservation", {
         "individualName": event_id,
-        "dataProperties": clean_properties([
-            {"property": "hasTimestamp", "value": timestamp},
-            {"property": "hasEventType", "value": event_type},
-            {"property": "hasMachineError", "value": canonical.get("machineError")},
-            {"property": "hasNozzleOperationTime", "value": canonical.get("nozzleOperationTime")},
-        ]),
+        "dataProperties": clean_properties(data_props),
         "objectProperties": []
     })
 
     INSTANCE_CACHE["ProductionSensorObservation"].add(event_id)
 
     # =============================
-    # 5. RELATIONSHIPS (SAFE)
+    # 6. SAFE LINK FUNCTION
     # =============================
-
     def safe_link(class_name, individual, prop, value):
         update_instance(class_name, individual, {
             "objectProperties": [
@@ -485,18 +503,26 @@ def create_frank_event(canonical):
             ]
         })
 
-    # Forward
+    # =============================
+    # 7. RELATIONSHIPS (FORWARD)
+    # =============================
     safe_link("ProductionSensorObservation", event_id, "productionObservedBy", sensor_id)
+
     safe_link("ProductionMonitoringSensor", sensor_id, "monitorsProdMetric", metric_id)
+
     safe_link("ProductionMonitoringSensor", sensor_id, "observesMachine", machine_id_clean)
 
-    # Inverse
+    # =============================
+    # 8. RELATIONSHIPS (INVERSE)
+    # =============================
     safe_link("ProductionMonitoringSensor", sensor_id, "isSensorOfObservation", event_id)
+
     safe_link("ProductionMetric", metric_id, "isMonitoredBy", sensor_id)
+
     safe_link("Machine", machine_id_clean, "isObservedBySensor", sensor_id)
 
     # =============================
-    # 6. OPTIONAL: Maintenance Event
+    # 9. MAINTENANCE EVENT (FIXED)
     # =============================
     if canonical.get("machineError"):
 
@@ -504,13 +530,25 @@ def create_frank_event(canonical):
 
         get_or_create("MaintenanceEvent", maint_id, {
             "individualName": maint_id,
-            "dataProperties": [],
+            "dataProperties": clean_properties([
+
+                {"property": "eventID", "value": maint_id},
+                {"property": "eventDescription", "value": canonical.get("machineError")},
+                {"property": "eventTimestamp", "value": timestamp},
+                {"property": "eventStatus", "value": "OPEN"},
+                {"property": "eventSeverity", "value": "HIGH"}
+
+            ]),
             "objectProperties": []
         })
 
         safe_link("MaintenanceEvent", maint_id, "affectsMachine", machine_id_clean)
+
         safe_link("Machine", machine_id_clean, "isAffectedBy", maint_id)
 
+    # =============================
+    # DONE
+    # =============================
     return {
         "status": "success",
         "eventId": event_id
