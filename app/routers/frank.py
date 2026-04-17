@@ -5,6 +5,9 @@ from typing import Dict, Any
 from app.services.harmonizer_frank_event import harmonize_frank_event
 from app.services.validator_frank_event import validate_frank_event
 from app.services.blueprint_adapter import create_frank_event
+from app.services.harmonizer_frank_event import harmonize_frank_argon
+from app.services.validator_frank_event import validate_frank_argon
+from app.services.blueprint_adapter import create_frank_argon_event
 
 # NEW (alerts)
 from app.services.harmonizer_frank_alert import harmonize_frank_alert
