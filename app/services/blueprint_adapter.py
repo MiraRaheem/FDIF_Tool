@@ -56,34 +56,42 @@ def clean_properties(properties):
 
 def instance_exists(class_name, individual_name):
 
-    # 1. Check cache (FAST)
+    # check cache first
     if individual_name in INSTANCE_CACHE.get(class_name, set()):
         return True
 
-    # 2. Check Blueprint API (SLOW fallback)
+    # fetch from API
     r = requests.get(f"{BASE_URL}/api/{class_name}")
     instances = r.json().get("instances", [])
 
     for inst in instances:
-        if isinstance(inst, str) and individual_name in inst:
-            INSTANCE_CACHE[class_name].add(individual_name)
-            return True
+
+        # CASE 1: string URI
+        if isinstance(inst, str):
+            if inst.split("#")[-1] == individual_name:
+                INSTANCE_CACHE[class_name].add(individual_name)
+                return True
+
+        # CASE 2: dict
+        if isinstance(inst, dict):
+            if inst.get("individualName") == individual_name:
+                INSTANCE_CACHE[class_name].add(individual_name)
+                return True
 
     return False
-
 
 def get_or_create(class_name, individual_name, payload):
 
     if instance_exists(class_name, individual_name):
         return {"status": "exists", "id": individual_name}
 
-    create_instance(class_name, payload)
+    res = create_instance(class_name, payload)
 
-    # update cache
-    INSTANCE_CACHE[class_name].add(individual_name)
+    # only cache if success
+    if res and res.get("status") == "success":
+        INSTANCE_CACHE[class_name].add(individual_name)
 
     return {"status": "created", "id": individual_name}
-
 
 def event_exists(event_id):
     return instance_exists("ProductionSensorObservation", event_id)
@@ -509,8 +517,11 @@ def create_frank_event(canonical):
 
     safe_link("ProductionMetric", metric_id, "isMonitoredBy", sensor_id)
 
-    safe_link("Machine", machine_id_clean, "isObservedBySensor", sensor_id)
-
+    try:
+        safe_link("Machine", machine_id_clean, "isObservedBySensor", sensor_id)
+    except Exception as e:
+        print("Machine link failed:", machine_id_clean, e)
+        
     # =============================
     # 4. MAINTENANCE EVENT (FIXED)
     # =============================
