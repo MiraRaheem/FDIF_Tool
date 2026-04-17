@@ -417,93 +417,106 @@ def create_supplier_instance(canonical):
     return create_instance("MaterialSupplier", payload)
 
 
+# -------------------
+# frank
+# -------------------
+
 def create_frank_event(canonical):
 
-    event_type = canonical["eventType"]
     timestamp = canonical["timestamp"]
     machine_id = canonical["machineId"]
 
-    # -------- IDs --------
-    sensor_id = f"Sensor_{machine_id}"
     machine_id_clean = f"Machine_{machine_id}"
-    metric_id = f"Metric_{event_type}"
+    sensor_id = f"Sensor_machine_{machine_id}"
 
     # =============================
-    # 0. MACHINE
+    # 1. MACHINE
     # =============================
     get_or_create("Machine", machine_id_clean, {
         "individualName": machine_id_clean,
-        "dataProperties": [],
+        "dataProperties": clean_properties([
+            {"property": "hasMachineID", "value": machine_id}
+        ]),
         "objectProperties": []
     })
 
     # =============================
-    # 1. SENSOR
+    # 2. VIRTUAL SENSOR
     # =============================
     get_or_create("ProductionMonitoringSensor", sensor_id, {
         "individualName": sensor_id,
-        "dataProperties": [],
+        "dataProperties": clean_properties([
+            {"property": "sensorID", "value": sensor_id},
+            {"property": "sensorType", "value": "ProductionPerformanceSensor"},
+            {"property": "dataSourceType", "value": "IoT"}
+        ]),
         "objectProperties": []
     })
 
-    # =============================
-    # 2. METRIC
-    # =============================
-    get_or_create("ProductionMetric", metric_id, {
-        "individualName": metric_id,
-        "dataProperties": [],
-        "objectProperties": []
+    # Link sensor → machine (CORRECT PROPERTY)
+    update_instance("ProductionMonitoringSensor", sensor_id, {
+        "objectProperties": [
+            {"property": "isDeployedOnMachineProductionSensor", "value": machine_id_clean}
+        ]
     })
 
     # =============================
-    # SAFE LINK FUNCTION
-    # =============================
-    def safe_link(class_name, individual, prop, value):
-
-        res = update_instance(class_name, individual, {
-            "objectProperties": [
-                {"property": prop, "value": value}
-            ]
-        })
-    
-        if not res or res.get("status") == "error":
-            print(f"❌ LINK FAILED: {class_name}.{prop} -> {value}")
-            print("Response:", res)
-            return False
-    
-        return True
-    # =============================
-    # 3. OBSERVATIONS (FIXED PROPERLY)
+    # 3. METRICS MAP (SEMANTIC)
     # =============================
     metrics_map = {
-        "storageTemperature": canonical.get("storageTemperature"),
-        "storageHumidity": canonical.get("storageHumidity"),
-        "averagePowerConsumption": canonical.get("averagePowerConsumption"),
-        "compressedAirInput": canonical.get("compressedAirInput"),
-        "noiseChillerLevel": canonical.get("noiseChillerLevel"),
-        "operatingTemperature": canonical.get("operatingTemperature"),
-        "powerPeakConsumption": canonical.get("powerPeakConsumption")
+        "storageTemperature": ("Temperature", "°C"),
+        "storageHumidity": ("Humidity", "%"),
+        "averagePowerConsumption": ("PowerConsumption", "kW"),
+        "compressedAirInput": ("AirPressure", "bar"),
+        "noiseChillerLevel": ("NoiseLevel", "dB"),
+        "operatingTemperature": ("OperatingTemperature", "°C"),
+        "powerPeakConsumption": ("PeakPower", "kW")
     }
 
     created_any = False
 
-    for metric_name, value in metrics_map.items():
+    # =============================
+    # 4. CREATE METRICS + OBSERVATIONS
+    # =============================
+    for field, value in canonical.items():
 
-        if value is None:
+        if field not in metrics_map or value is None:
             continue
 
+        metric_name, unit = metrics_map[field]
+
+        metric_id = f"Metric_{metric_name}"
         obs_id = f"Observation_{metric_name}_{timestamp}"
 
-        # -------- IDEMPOTENCY PER OBSERVATION --------
+        # -------- METRIC --------
+        get_or_create("ProductionMetric", metric_id, {
+            "individualName": metric_id,
+            "dataProperties": clean_properties([
+                {"property": "parameterID", "value": metric_id},
+                {"property": "parameterName", "value": metric_name},
+                {"property": "unitOfMeasurement", "value": unit}
+            ]),
+            "objectProperties": []
+        })
+
+        # Link sensor → metric
+        update_instance("ProductionMonitoringSensor", sensor_id, {
+            "objectProperties": [
+                {"property": "monitorsProdMetric", "value": metric_id}
+            ]
+        })
+
+        # -------- OBSERVATION --------
         if instance_exists("ProductionSensorObservation", obs_id):
             continue
 
-        # -------- CREATE OBSERVATION --------
         create_instance("ProductionSensorObservation", {
             "individualName": obs_id,
             "dataProperties": clean_properties([
+                {"property": "observationID", "value": obs_id},
+                {"property": "observedValue", "value": float(value)},
                 {"property": "observationTimestamp", "value": timestamp},
-                {"property": "observedValue", "value": float(value)}
+                {"property": "unitOfMeasureSensor", "value": unit}
             ]),
             "objectProperties": []
         })
@@ -511,56 +524,55 @@ def create_frank_event(canonical):
         INSTANCE_CACHE["ProductionSensorObservation"].add(obs_id)
         created_any = True
 
-        # -------- RELATIONSHIPS --------
-        safe_link("ProductionSensorObservation", obs_id, "productionObservedBy", sensor_id)
-
-        safe_link("ProductionMonitoringSensor", sensor_id, "isSensorOfObservation", obs_id)
+        # Link observation → sensor (CORRECT)
+        update_instance("ProductionSensorObservation", obs_id, {
+            "objectProperties": [
+                {"property": "productionObservedBy", "value": sensor_id}
+            ]
+        })
 
     # =============================
-    # SENSOR RELATIONSHIPS
-    # =============================
-    safe_link("ProductionMonitoringSensor", sensor_id, "monitorsProdMetric", metric_id)
-
-    safe_link("ProductionMonitoringSensor", sensor_id, "observesMachine", machine_id_clean)
-
-    safe_link("ProductionMetric", metric_id, "isMonitoredBy", sensor_id)
-
-    try:
-        safe_link("Machine", machine_id_clean, "monitoredByConditionSensor", sensor_id)
-    except Exception as e:
-        print("Machine link failed:", machine_id_clean, e)
-        
-    # =============================
-    # 4. MAINTENANCE EVENT (FIXED)
+    # 5. MAINTENANCE EVENT
     # =============================
     if canonical.get("machineError"):
 
-        try:
-            maint_id = f"Maintenance_{canonical['machineError']}_{timestamp}"
-    
-            res = get_or_create("MaintenanceEvent", maint_id, {
-                "individualName": maint_id,
-                "dataProperties": clean_properties([
-                    {"property": "eventID", "value": maint_id},
-                    {"property": "eventDescription", "value": canonical.get("machineError")},
-                    {"property": "eventTimestamp", "value": timestamp},
-                    {"property": "eventStatus", "value": "OPEN"},
-                    {"property": "eventSeverity", "value": "HIGH"}
-                ]),
-                "objectProperties": []
-            })
-    
-            print("Maintenance create:", res)
-    
-            if safe_link("MaintenanceEvent", maint_id, "affectsMachine", machine_id_clean):
-                safe_link("Machine", machine_id_clean, "machineAffectedByEvent", maint_id)
-    
-        except Exception as e:
-            print("❌ Maintenance block failed:", e)
+        maint_id = f"Maintenance_{canonical['machineError']}_{timestamp}"
+
+        get_or_create("MaintenanceEvent", maint_id, {
+            "individualName": maint_id,
+            "dataProperties": clean_properties([
+                {"property": "eventID", "value": maint_id},
+                {"property": "eventDescription", "value": canonical.get("machineError")},
+                {"property": "eventTimestamp", "value": timestamp},
+                {"property": "eventStatus", "value": "Detected"},
+                {"property": "eventSeverity", "value": "High"}
+            ]),
+            "objectProperties": []
+        })
+
+        # Link event → machine
+        update_instance("MaintenanceEvent", maint_id, {
+            "objectProperties": [
+                {"property": "affectsMachine", "value": machine_id_clean}
+            ]
+        })
+
+        # Link observation → event (IMPORTANT SEMANTIC LINK)
+        for field in metrics_map:
+            obs_id = f"Observation_{metrics_map[field][0]}_{timestamp}"
+
+            if instance_exists("ProductionSensorObservation", obs_id):
+                update_instance("ProductionSensorObservation", obs_id, {
+                    "objectProperties": [
+                        {"property": "triggersProductionEvent", "value": maint_id}
+                    ]
+                })
+
     # =============================
     # DONE
     # =============================
     return {
         "status": "success" if created_any else "exists",
-        "eventId": f"{event_type}_{timestamp}"
+        "machine": machine_id_clean,
+        "sensor": sensor_id
     }
