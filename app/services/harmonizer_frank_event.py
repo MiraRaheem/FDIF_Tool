@@ -23,3 +23,14 @@ def harmonize_frank_event(raw):
         "machineError": raw.get("machineError"),
         "nozzleOperationTime": raw.get("nozzleOperationTime"),
     }
+
+def harmonize_frank_argon(raw):
+    return {
+        "eventType": raw.get("eventType"),
+        "timestamp": raw.get("time"),
+        "timestampHR": raw.get("timeHR"),
+
+        "register1": raw.get("register1"),
+        "register2": raw.get("register2"),
+        "register3": raw.get("register3"),
+    }
