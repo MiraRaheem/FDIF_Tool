@@ -684,3 +684,103 @@ def create_frank_alert(canonical):
         "eventId": maint_id,
         "machine": machine_id_clean
     }
+
+
+def create_frank_argon_event(canonical):
+
+    event_type = canonical["eventType"]
+    timestamp = canonical["timestamp"]
+
+    sensor_id = "Sensor_argon"
+    metric_id = "Metric_argonGasLevel"
+
+    # =============================
+    # 1. SENSOR (virtual)
+    # =============================
+    get_or_create("ProductionMonitoringSensor", sensor_id, {
+        "individualName": sensor_id,
+        "dataProperties": clean_properties([
+            {"property": "sensorID", "value": sensor_id},
+            {"property": "sensorType", "value": "PressureSensor"},
+            {"property": "sensorName", "value": "Argon Gas Sensor"}
+        ]),
+        "objectProperties": []
+    })
+
+    # =============================
+    # 2. METRIC
+    # =============================
+    get_or_create("ProductionMetric", metric_id, {
+        "individualName": metric_id,
+        "dataProperties": clean_properties([
+            {"property": "parameterID", "value": metric_id},
+            {"property": "parameterName", "value": "Argon Gas Level"},
+            {"property": "unitOfMeasurement", "value": "%"}
+        ]),
+        "objectProperties": []
+    })
+
+    # =============================
+    # LINK SENSOR ↔ METRIC
+    # =============================
+    update_instance("ProductionMonitoringSensor", sensor_id, {
+        "objectProperties": [
+            {"property": "monitorsProdMetric", "value": metric_id}
+        ]
+    })
+
+    update_instance("ProductionMetric", metric_id, {
+        "objectProperties": [
+            {"property": "prodMetricMonitoredBy", "value": sensor_id}
+        ]
+    })
+
+    # =============================
+    # 3. OBSERVATIONS (3 registers)
+    # =============================
+    registers = {
+        "register1": canonical.get("register1"),
+        "register2": canonical.get("register2"),
+        "register3": canonical.get("register3"),
+    }
+
+    for reg_name, value in registers.items():
+
+        if value is None:
+            continue
+
+        obs_id = f"Observation_{reg_name}_{timestamp}"
+
+        if instance_exists("ProductionSensorObservation", obs_id):
+            continue
+
+        create_instance("ProductionSensorObservation", {
+            "individualName": obs_id,
+            "dataProperties": clean_properties([
+                {"property": "observationID", "value": obs_id},
+                {"property": "observedValue", "value": float(value)},
+                {"property": "observationTimestamp", "value": timestamp},
+                {"property": "unitOfMeasureSensor", "value": "%"}
+            ]),
+            "objectProperties": []
+        })
+
+        # LINK OBS → SENSOR
+        update_instance("ProductionSensorObservation", obs_id, {
+            "objectProperties": [
+                {"property": "productionObservedBy", "value": sensor_id}
+            ]
+        })
+
+        # LINK SENSOR → OBS (inverse)
+        update_instance("ProductionMonitoringSensor", sensor_id, {
+            "objectProperties": [
+                {"property": "observesProduction", "value": obs_id}
+            ]
+        })
+
+    return {
+        "status": "success",
+        "eventType": event_type,
+        "timestamp": timestamp
+    }
