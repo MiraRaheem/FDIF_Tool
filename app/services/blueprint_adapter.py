@@ -13,9 +13,9 @@ INSTANCE_CACHE = {
     "Machine": set(),
     "ProductionMonitoringSensor": set(),
     "ProductionMetric": set(),
-    "ProductionSensorObservation": set()
+    "ProductionSensorObservation": set(),
+    "MaintenanceEvent": set()  # ✅ ADD THIS
 }
-
 def sanitize_id(value: str) -> str:
     if not value:
         return value
@@ -57,9 +57,10 @@ def clean_properties(properties):
 def instance_exists(class_name, individual_name):
 
     # check cache first
-    if individual_name in INSTANCE_CACHE.get(class_name, set()):
+    if class_name not in INSTANCE_CACHE:
+        INSTANCE_CACHE[class_name] = set()
+    if individual_name in INSTANCE_CACHE[class_name]:
         return True
-
     # fetch from API
     r = requests.get(f"{BASE_URL}/api/{class_name}")
     instances = r.json().get("instances", [])
