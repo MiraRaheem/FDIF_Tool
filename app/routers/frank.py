@@ -48,9 +48,11 @@ def ingest_frank_alert(body: Dict[str, Any]):
 
         # -------- STEP 2: Validate --------
         validated = validate_frank_alert(canonical)
+        print("CANONICAL:", canonical)
 
         # -------- STEP 3: Blueprint --------
         result = create_frank_alert(validated)
+        print("validated:", validated)
 
         return {
             "status": "success",
