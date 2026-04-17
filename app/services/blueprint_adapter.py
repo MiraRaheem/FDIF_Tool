@@ -441,7 +441,7 @@ def create_frank_event(canonical):
     })
 
     # =============================
-    # 2. VIRTUAL SENSOR
+    # 2. SENSOR (virtual)
     # =============================
     get_or_create("ProductionMonitoringSensor", sensor_id, {
         "individualName": sensor_id,
@@ -453,15 +453,21 @@ def create_frank_event(canonical):
         "objectProperties": []
     })
 
-    # Link sensor → machine (CORRECT PROPERTY)
+    # -------- Sensor ↔ Machine --------
     update_instance("ProductionMonitoringSensor", sensor_id, {
         "objectProperties": [
             {"property": "isDeployedOnMachineProductionSensor", "value": machine_id_clean}
         ]
     })
 
+    update_instance("Machine", machine_id_clean, {
+        "objectProperties": [
+            {"property": "monitoredByProdSensor", "value": sensor_id}
+        ]
+    })
+
     # =============================
-    # 3. METRICS MAP (SEMANTIC)
+    # 3. METRICS
     # =============================
     metrics_map = {
         "storageTemperature": ("Temperature", "°C"),
@@ -474,10 +480,8 @@ def create_frank_event(canonical):
     }
 
     created_any = False
+    created_observations = []
 
-    # =============================
-    # 4. CREATE METRICS + OBSERVATIONS
-    # =============================
     for field, value in canonical.items():
 
         if field not in metrics_map or value is None:
@@ -499,10 +503,16 @@ def create_frank_event(canonical):
             "objectProperties": []
         })
 
-        # Link sensor → metric
+        # -------- Sensor ↔ Metric --------
         update_instance("ProductionMonitoringSensor", sensor_id, {
             "objectProperties": [
                 {"property": "monitorsProdMetric", "value": metric_id}
+            ]
+        })
+
+        update_instance("ProductionMetric", metric_id, {
+            "objectProperties": [
+                {"property": "prodMetricMonitoredBy", "value": sensor_id}
             ]
         })
 
@@ -523,16 +533,23 @@ def create_frank_event(canonical):
 
         INSTANCE_CACHE["ProductionSensorObservation"].add(obs_id)
         created_any = True
+        created_observations.append(obs_id)
 
-        # Link observation → sensor (CORRECT)
+        # -------- Sensor ↔ Observation --------
         update_instance("ProductionSensorObservation", obs_id, {
             "objectProperties": [
                 {"property": "productionObservedBy", "value": sensor_id}
             ]
         })
 
+        update_instance("ProductionMonitoringSensor", sensor_id, {
+            "objectProperties": [
+                {"property": "observesProduction", "value": obs_id}
+            ]
+        })
+
     # =============================
-    # 5. MAINTENANCE EVENT
+    # 4. MAINTENANCE EVENT
     # =============================
     if canonical.get("machineError"):
 
@@ -550,23 +567,26 @@ def create_frank_event(canonical):
             "objectProperties": []
         })
 
-        # Link event → machine
+        # -------- Event ↔ Machine --------
         update_instance("MaintenanceEvent", maint_id, {
             "objectProperties": [
                 {"property": "affectsMachine", "value": machine_id_clean}
             ]
         })
 
-        # Link observation → event (IMPORTANT SEMANTIC LINK)
-        for field in metrics_map:
-            obs_id = f"Observation_{metrics_map[field][0]}_{timestamp}"
+        update_instance("Machine", machine_id_clean, {
+            "objectProperties": [
+                {"property": "machineAffectedByEvent", "value": maint_id}
+            ]
+        })
 
-            if instance_exists("ProductionSensorObservation", obs_id):
-                update_instance("ProductionSensorObservation", obs_id, {
-                    "objectProperties": [
-                        {"property": "triggersProductionEvent", "value": maint_id}
-                    ]
-                })
+        # -------- Observation → Event --------
+        for obs_id in created_observations:
+            update_instance("ProductionSensorObservation", obs_id, {
+                "objectProperties": [
+                    {"property": "triggersProductionEvent", "value": maint_id}
+                ]
+            })
 
     # =============================
     # DONE
