@@ -8,6 +8,9 @@ from app.services.blueprint_adapter import create_frank_event
 from app.services.harmonizer_frank_event import harmonize_frank_argon
 from app.services.validator_frank_event import validate_frank_argon
 from app.services.blueprint_adapter import create_frank_argon_event
+from app.services.harmonizer_frank_event import harmonize_frank_argon_prediction
+from app.services.validator_frank_event import validate_frank_argon_prediction
+from app.services.blueprint_adapter import create_frank_argon_prediction
 
 # NEW (alerts)
 from app.services.harmonizer_frank_alert import harmonize_frank_alert
@@ -74,6 +77,24 @@ def ingest_frank_argon(body: Dict[str, Any]):
         canonical = harmonize_frank_argon(body)
         validated = validate_frank_argon(canonical)
         result = create_frank_argon_event(validated)
+
+        return {
+            "status": "success",
+            "canonical": canonical,
+            "blueprint": result
+        }
+
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@router.post("/argon/prediction")
+def ingest_frank_argon_prediction(body: Dict[str, Any]):
+
+    try:
+        canonical = harmonize_frank_argon_prediction(body)
+        validated = validate_frank_argon_prediction(canonical)
+        result = create_frank_argon_prediction(validated)
 
         return {
             "status": "success",
