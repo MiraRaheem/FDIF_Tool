@@ -784,3 +784,91 @@ def create_frank_argon_event(canonical):
         "eventType": event_type,
         "timestamp": timestamp
     }
+
+
+def create_frank_argon_prediction(canonical):
+
+    timestamp = canonical["timestamp"]
+    value = canonical["predictedDepletion"]
+
+    sensor_id = "Sensor_argon_prediction"
+    metric_id = "Metric_argonDepletionTime"
+
+    # =============================
+    # SENSOR (predictive)
+    # =============================
+    get_or_create("ProductionMonitoringSensor", sensor_id, {
+        "individualName": sensor_id,
+        "dataProperties": clean_properties([
+            {"property": "sensorID", "value": sensor_id},
+            {"property": "sensorName", "value": "Argon Prediction Sensor"},
+            {"property": "sensorType", "value": "ProductionPerformanceSensor"},
+            {"property": "dataSourceType", "value": "AI"}
+        ]),
+        "objectProperties": []
+    })
+
+    # =============================
+    # METRIC
+    # =============================
+    get_or_create("ProductionMetric", metric_id, {
+        "individualName": metric_id,
+        "dataProperties": clean_properties([
+            {"property": "parameterID", "value": metric_id},
+            {"property": "parameterName", "value": "Argon Depletion Time"},
+            {"property": "unitOfMeasurement", "value": "hours"}
+        ]),
+        "objectProperties": []
+    })
+
+    # =============================
+    # LINK SENSOR ↔ METRIC
+    # =============================
+    update_instance("ProductionMonitoringSensor", sensor_id, {
+        "objectProperties": [
+            {"property": "monitorsProdMetric", "value": metric_id}
+        ]
+    })
+
+    update_instance("ProductionMetric", metric_id, {
+        "objectProperties": [
+            {"property": "prodMetricMonitoredBy", "value": sensor_id}
+        ]
+    })
+
+    # =============================
+    # OBSERVATION
+    # =============================
+    obs_id = f"Observation_argonPrediction_{timestamp}"
+
+    if not instance_exists("ProductionSensorObservation", obs_id):
+
+        create_instance("ProductionSensorObservation", {
+            "individualName": obs_id,
+            "dataProperties": clean_properties([
+                {"property": "observationID", "value": obs_id},
+                {"property": "observedValue", "value": value},
+                {"property": "observationTimestamp", "value": timestamp},
+                {"property": "unitOfMeasureSensor", "value": "hours"}
+            ]),
+            "objectProperties": []
+        })
+
+        # forward
+        update_instance("ProductionSensorObservation", obs_id, {
+            "objectProperties": [
+                {"property": "productionObservedBy", "value": sensor_id}
+            ]
+        })
+
+        # inverse
+        update_instance("ProductionMonitoringSensor", sensor_id, {
+            "objectProperties": [
+                {"property": "observesProduction", "value": obs_id}
+            ]
+        })
+
+    return {
+        "status": "success",
+        "eventId": obs_id
+    }
