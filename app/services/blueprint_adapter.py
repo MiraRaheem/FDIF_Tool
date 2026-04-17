@@ -458,12 +458,21 @@ def create_frank_event(canonical):
     # SAFE LINK FUNCTION
     # =============================
     def safe_link(class_name, individual, prop, value):
-        update_instance(class_name, individual, {
-            "objectProperties": [
-                {"property": prop, "value": value}
-            ]
-        })
 
+    res = update_instance(class_name, individual, {
+        "objectProperties": [
+            {"property": prop, "value": value}
+        ]
+    })
+
+    # 🔥 CRITICAL: handle failure
+    if not res or res.get("status") == "error":
+        print(f"❌ LINK FAILED: {class_name}.{prop} -> {value}")
+        print("Response:", res)
+        return False
+
+    return True
+    
     # =============================
     # 3. OBSERVATIONS (FIXED PROPERLY)
     # =============================
@@ -543,10 +552,8 @@ def create_frank_event(canonical):
             "objectProperties": []
         })
 
-        safe_link("MaintenanceEvent", maint_id, "affectsMachine", machine_id_clean)
-
-        safe_link("Machine", machine_id_clean, "machineAffectedByEvent", maint_id)
-
+        if safe_link("MaintenanceEvent", maint_id, "affectsMachine", machine_id_clean):
+            safe_link("Machine", machine_id_clean, "machineAffectedByEvent", maint_id)
     # =============================
     # DONE
     # =============================
