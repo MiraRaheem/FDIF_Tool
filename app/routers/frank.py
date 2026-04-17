@@ -62,3 +62,21 @@ def ingest_frank_alert(body: Dict[str, Any]):
 
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
+
+
+@router.post("/argon")
+def ingest_frank_argon(body: Dict[str, Any]):
+
+    try:
+        canonical = harmonize_frank_argon(body)
+        validated = validate_frank_argon(canonical)
+        result = create_frank_argon_event(validated)
+
+        return {
+            "status": "success",
+            "canonical": canonical,
+            "blueprint": result
+        }
+
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
