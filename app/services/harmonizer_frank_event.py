@@ -34,3 +34,12 @@ def harmonize_frank_argon(raw):
         "register2": raw.get("register2"),
         "register3": raw.get("register3"),
     }
+
+
+def harmonize_frank_argon_prediction(raw):
+
+    return {
+        "eventType": raw.get("eventType"),
+        "timestamp": raw.get("time"),
+        "predictedDepletion": raw.get("predictedDepletion")
+    }
