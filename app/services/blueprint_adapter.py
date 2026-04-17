@@ -602,14 +602,12 @@ def create_frank_event(canonical):
 def create_frank_alert(canonical):
 
     event_id = canonical["eventId"]
-    timestamp = canonical["time"]
+    timestamp = canonical["timestamp"]
     description = canonical.get("descriptionValue")
     alert_text = canonical.get("alert")
-
-    machine_id = canonical["data"]["machineId"]
-    current_value = canonical["data"].get("currentValue")
-    threshold = canonical["data"].get("valueThreshold")
-
+    machine_id = canonical["machineId"]
+    current_value = canonical.get("currentValue")
+    threshold = canonical.get("valueThreshold")
     machine_id_clean = f"Machine_{machine_id}"
     maint_id = f"Maintenance_{event_id}"
 
