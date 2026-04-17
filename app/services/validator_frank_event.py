@@ -29,6 +29,22 @@ def validate_frank_event(data):
     return data
 
 
+def validate_frank_argon_prediction(data):
+
+    if not data.get("eventType"):
+        raise ValueError("eventType missing")
+
+    if data.get("timestamp") is None:
+        raise ValueError("timestamp missing")
+
+    if data.get("predictedDepletion") is None:
+        raise ValueError("predictedDepletion missing")
+
+    data["predictedDepletion"] = float(data["predictedDepletion"])
+
+    return data
+
+
 def validate_frank_argon(data):
 
     if not data.get("eventType"):
