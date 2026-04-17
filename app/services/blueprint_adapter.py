@@ -408,8 +408,6 @@ def create_supplier_instance(canonical):
     return create_instance("MaterialSupplier", payload)
 
 
-
-
 def create_frank_event(canonical):
 
     event_type = canonical["eventType"]
@@ -417,22 +415,12 @@ def create_frank_event(canonical):
     machine_id = canonical["machineId"]
 
     # -------- IDs --------
-    event_id = f"Observation_{event_type}_{timestamp}"
     sensor_id = f"Sensor_{machine_id}"
     machine_id_clean = f"Machine_{machine_id}"
     metric_id = f"Metric_{event_type}"
 
     # =============================
-    # 0. IDEMPOTENCY
-    # =============================
-    if instance_exists("ProductionSensorObservation", event_id):
-        return {
-            "status": "exists",
-            "eventId": event_id
-        }
-
-    # =============================
-    # 1. MACHINE
+    # 0. MACHINE
     # =============================
     get_or_create("Machine", machine_id_clean, {
         "individualName": machine_id_clean,
@@ -441,7 +429,7 @@ def create_frank_event(canonical):
     })
 
     # =============================
-    # 2. SENSOR
+    # 1. SENSOR
     # =============================
     get_or_create("ProductionMonitoringSensor", sensor_id, {
         "individualName": sensor_id,
@@ -450,7 +438,7 @@ def create_frank_event(canonical):
     })
 
     # =============================
-    # 3. METRIC (FIXED)
+    # 2. METRIC
     # =============================
     get_or_create("ProductionMetric", metric_id, {
         "individualName": metric_id,
@@ -459,42 +447,7 @@ def create_frank_event(canonical):
     })
 
     # =============================
-    # 4. BUILD OBSERVATION VALUES
-    # =============================
-    observed_values = [
-        canonical.get("storageTemperature"),
-        canonical.get("storageHumidity"),
-        canonical.get("averagePowerConsumption"),
-        canonical.get("compressedAirInput"),
-        canonical.get("noiseChillerLevel"),
-        canonical.get("operatingTemperature"),
-        canonical.get("powerPeakConsumption")
-    ]
-
-    data_props = [
-        {"property": "observationTimestamp", "value": timestamp}
-    ]
-
-    for val in observed_values:
-        if val is not None:
-            data_props.append({
-                "property": "observedValue",
-                "value": float(val)
-            })
-
-    # =============================
-    # 5. CREATE OBSERVATION
-    # =============================
-    create_instance("ProductionSensorObservation", {
-        "individualName": event_id,
-        "dataProperties": clean_properties(data_props),
-        "objectProperties": []
-    })
-
-    INSTANCE_CACHE["ProductionSensorObservation"].add(event_id)
-
-    # =============================
-    # 6. SAFE LINK FUNCTION
+    # SAFE LINK FUNCTION
     # =============================
     def safe_link(class_name, individual, prop, value):
         update_instance(class_name, individual, {
@@ -504,25 +457,62 @@ def create_frank_event(canonical):
         })
 
     # =============================
-    # 7. RELATIONSHIPS (FORWARD)
+    # 3. OBSERVATIONS (FIXED PROPERLY)
     # =============================
-    safe_link("ProductionSensorObservation", event_id, "productionObservedBy", sensor_id)
+    metrics_map = {
+        "storageTemperature": canonical.get("storageTemperature"),
+        "storageHumidity": canonical.get("storageHumidity"),
+        "averagePowerConsumption": canonical.get("averagePowerConsumption"),
+        "compressedAirInput": canonical.get("compressedAirInput"),
+        "noiseChillerLevel": canonical.get("noiseChillerLevel"),
+        "operatingTemperature": canonical.get("operatingTemperature"),
+        "powerPeakConsumption": canonical.get("powerPeakConsumption")
+    }
 
+    created_any = False
+
+    for metric_name, value in metrics_map.items():
+
+        if value is None:
+            continue
+
+        obs_id = f"Observation_{metric_name}_{timestamp}"
+
+        # -------- IDEMPOTENCY PER OBSERVATION --------
+        if instance_exists("ProductionSensorObservation", obs_id):
+            continue
+
+        # -------- CREATE OBSERVATION --------
+        create_instance("ProductionSensorObservation", {
+            "individualName": obs_id,
+            "dataProperties": clean_properties([
+                {"property": "observationTimestamp", "value": timestamp},
+                {"property": "observedValue", "value": float(value)}
+            ]),
+            "objectProperties": []
+        })
+
+        INSTANCE_CACHE["ProductionSensorObservation"].add(obs_id)
+        created_any = True
+
+        # -------- RELATIONSHIPS --------
+        safe_link("ProductionSensorObservation", obs_id, "productionObservedBy", sensor_id)
+
+        safe_link("ProductionMonitoringSensor", sensor_id, "isSensorOfObservation", obs_id)
+
+    # =============================
+    # SENSOR RELATIONSHIPS
+    # =============================
     safe_link("ProductionMonitoringSensor", sensor_id, "monitorsProdMetric", metric_id)
 
     safe_link("ProductionMonitoringSensor", sensor_id, "observesMachine", machine_id_clean)
-
-    # =============================
-    # 8. RELATIONSHIPS (INVERSE)
-    # =============================
-    safe_link("ProductionMonitoringSensor", sensor_id, "isSensorOfObservation", event_id)
 
     safe_link("ProductionMetric", metric_id, "isMonitoredBy", sensor_id)
 
     safe_link("Machine", machine_id_clean, "isObservedBySensor", sensor_id)
 
     # =============================
-    # 9. MAINTENANCE EVENT (FIXED)
+    # 4. MAINTENANCE EVENT (FIXED)
     # =============================
     if canonical.get("machineError"):
 
@@ -544,12 +534,12 @@ def create_frank_event(canonical):
 
         safe_link("MaintenanceEvent", maint_id, "affectsMachine", machine_id_clean)
 
-        safe_link("Machine", machine_id_clean, "isAffectedBy", maint_id)
+        safe_link("Machine", machine_id_clean, "machineAffectedByEvent", maint_id)
 
     # =============================
     # DONE
     # =============================
     return {
-        "status": "success",
-        "eventId": event_id
+        "status": "success" if created_any else "exists",
+        "eventId": f"{event_type}_{timestamp}"
     }
