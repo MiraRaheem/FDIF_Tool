@@ -459,20 +459,18 @@ def create_frank_event(canonical):
     # =============================
     def safe_link(class_name, individual, prop, value):
 
-    res = update_instance(class_name, individual, {
-        "objectProperties": [
-            {"property": prop, "value": value}
-        ]
-    })
-
-    # 🔥 CRITICAL: handle failure
-    if not res or res.get("status") == "error":
-        print(f"❌ LINK FAILED: {class_name}.{prop} -> {value}")
-        print("Response:", res)
-        return False
-
-    return True
+        res = update_instance(class_name, individual, {
+            "objectProperties": [
+                {"property": prop, "value": value}
+            ]
+        })
     
+        if not res or res.get("status") == "error":
+            print(f"❌ LINK FAILED: {class_name}.{prop} -> {value}")
+            print("Response:", res)
+            return False
+    
+        return True
     # =============================
     # 3. OBSERVATIONS (FIXED PROPERLY)
     # =============================
