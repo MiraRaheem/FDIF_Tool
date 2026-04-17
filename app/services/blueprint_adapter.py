@@ -526,7 +526,7 @@ def create_frank_event(canonical):
     safe_link("ProductionMetric", metric_id, "isMonitoredBy", sensor_id)
 
     try:
-        safe_link("Machine", machine_id_clean, "isObservedBySensor", sensor_id)
+        safe_link("Machine", machine_id_clean, "monitoredByConditionSensor", sensor_id)
     except Exception as e:
         print("Machine link failed:", machine_id_clean, e)
         
