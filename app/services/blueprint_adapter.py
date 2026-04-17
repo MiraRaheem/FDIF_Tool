@@ -596,3 +596,93 @@ def create_frank_event(canonical):
         "machine": machine_id_clean,
         "sensor": sensor_id
     }
+
+
+
+def create_frank_alert(canonical):
+
+    event_id = canonical["eventId"]
+    timestamp = canonical["time"]
+    description = canonical.get("descriptionValue")
+    alert_text = canonical.get("alert")
+
+    machine_id = canonical["data"]["machineId"]
+    current_value = canonical["data"].get("currentValue")
+    threshold = canonical["data"].get("valueThreshold")
+
+    machine_id_clean = f"Machine_{machine_id}"
+    maint_id = f"Maintenance_{event_id}"
+
+    # =============================
+    # 1. MACHINE (ensure exists)
+    # =============================
+    get_or_create("Machine", machine_id_clean, {
+        "individualName": machine_id_clean,
+        "dataProperties": clean_properties([
+            {"property": "hasMachineID", "value": machine_id}
+        ]),
+        "objectProperties": []
+    })
+
+    # =============================
+    # 2. BUILD DESCRIPTION (SMART)
+    # =============================
+    full_description = description or ""
+
+    if current_value not in ["NA", None]:
+        full_description += f" | Current: {current_value}"
+
+    if threshold not in ["NA", None]:
+        full_description += f" | Threshold: {threshold}"
+
+    if alert_text:
+        full_description += f" | Alert: {alert_text}"
+
+    # =============================
+    # 3. DETERMINE SEVERITY
+    # =============================
+    if canonical["eventType"] == "machineErrorCode":
+        severity = "Critical"
+        status = "Active"
+    else:
+        severity = "High"
+        status = "Detected"
+
+    # =============================
+    # 4. CREATE EVENT
+    # =============================
+    get_or_create("MaintenanceEvent", maint_id, {
+        "individualName": maint_id,
+        "dataProperties": clean_properties([
+            {"property": "eventID", "value": maint_id},
+            {"property": "eventDescription", "value": full_description},
+            {"property": "eventTimestamp", "value": timestamp},
+            {"property": "eventSeverity", "value": severity},
+            {"property": "eventStatus", "value": status}
+        ]),
+        "objectProperties": []
+    })
+
+    # =============================
+    # 5. LINK EVENT ↔ MACHINE (BOTH DIRECTIONS)
+    # =============================
+    update_instance("MaintenanceEvent", maint_id, {
+        "objectProperties": [
+            {"property": "affectsMachine", "value": machine_id_clean}
+        ]
+    })
+
+    update_instance("Machine", machine_id_clean, {
+        "objectProperties": [
+            {"property": "machineAffectedByEvent", "value": maint_id}
+        ]
+    })
+
+    # =============================
+    # DONE
+    # =============================
+    return {
+        "status": "success",
+        "eventId": maint_id,
+        "machine": machine_id_clean
+    }
