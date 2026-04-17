@@ -534,24 +534,28 @@ def create_frank_event(canonical):
     # =============================
     if canonical.get("machineError"):
 
-        maint_id = f"Maintenance_{canonical['machineError']}_{timestamp}"
-
-        get_or_create("MaintenanceEvent", maint_id, {
-            "individualName": maint_id,
-            "dataProperties": clean_properties([
-
-                {"property": "eventID", "value": maint_id},
-                {"property": "eventDescription", "value": canonical.get("machineError")},
-                {"property": "eventTimestamp", "value": timestamp},
-                {"property": "eventStatus", "value": "OPEN"},
-                {"property": "eventSeverity", "value": "HIGH"}
-
-            ]),
-            "objectProperties": []
-        })
-
-        if safe_link("MaintenanceEvent", maint_id, "affectsMachine", machine_id_clean):
-            safe_link("Machine", machine_id_clean, "machineAffectedByEvent", maint_id)
+        try:
+            maint_id = f"Maintenance_{canonical['machineError']}_{timestamp}"
+    
+            res = get_or_create("MaintenanceEvent", maint_id, {
+                "individualName": maint_id,
+                "dataProperties": clean_properties([
+                    {"property": "eventID", "value": maint_id},
+                    {"property": "eventDescription", "value": canonical.get("machineError")},
+                    {"property": "eventTimestamp", "value": timestamp},
+                    {"property": "eventStatus", "value": "OPEN"},
+                    {"property": "eventSeverity", "value": "HIGH"}
+                ]),
+                "objectProperties": []
+            })
+    
+            print("Maintenance create:", res)
+    
+            if safe_link("MaintenanceEvent", maint_id, "affectsMachine", machine_id_clean):
+                safe_link("Machine", machine_id_clean, "machineAffectedByEvent", maint_id)
+    
+        except Exception as e:
+            print("❌ Maintenance block failed:", e)
     # =============================
     # DONE
     # =============================
