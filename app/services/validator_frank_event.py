@@ -27,3 +27,14 @@ def validate_frank_event(data):
             data[field] = float(data[field])
 
     return data
+
+
+def validate_frank_argon(data):
+
+    if not data.get("eventType"):
+        raise ValueError("eventType missing")
+
+    if data.get("timestamp") is None:
+        raise ValueError("timestamp missing")
+
+    return data
