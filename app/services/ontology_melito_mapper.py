@@ -1,29 +1,21 @@
-from app.services.blueprint_adapter import create_instance
-
+from app.services.blueprint_adapter import update_instance
 
 def link_bidirectional(class_a, id_a, prop_a_to_b,
                        class_b, id_b, prop_b_to_a):
-    """
-    Creates both forward and inverse relationships
-    """
 
     # A → B
-    create_instance(class_a, {
-        "individualName": id_a,
+    update_instance(class_a, id_a, {
         "objectProperties": [
             {"property": prop_a_to_b, "value": id_b}
         ]
     })
 
     # B → A
-    create_instance(class_b, {
-        "individualName": id_b,
+    update_instance(class_b, id_b, {
         "objectProperties": [
             {"property": prop_b_to_a, "value": id_a}
         ]
     })
-
-
 def map_to_ontology(data):
 
     created = []
