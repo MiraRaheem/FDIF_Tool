@@ -1,4 +1,4 @@
-from app.services.blueprint_adapter import update_instance
+from app.services.blueprint_adapter import create_instance, update_instance
 
 def link_bidirectional(class_a, id_a, prop_a_to_b,
                        class_b, id_b, prop_b_to_a):
