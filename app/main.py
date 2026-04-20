@@ -22,7 +22,7 @@ app.include_router(frank_router)
 app.include_router(medwood_router, prefix="/fdif")
 
 # CEP (Melito + future real-time ingestion)
-app.include_router(cep_router, prefix="/cep")  # ✅ NEW
+app.include_router(cep_router)  # ✅ NEW
 
 # -------- HEALTH --------
 @app.get("/")
