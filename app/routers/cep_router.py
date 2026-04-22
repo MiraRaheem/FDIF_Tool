@@ -1,7 +1,7 @@
 from fastapi import APIRouter
-from app.services.harmonizer_melito import harmonize_melito_readings
-from app.services.ontology_melito_mapper import map_to_ontology
-from app.services.validator_melito import validate_melito_entities
+from app.services.harmonizer_observations import harmonize_observations
+from app.services.validator_observations import validate_observations
+from app.services.ontology_observations_mapper import map_observations
 
 router = APIRouter(
     prefix="/fdif/cep",   # ✅ FIX URL
