@@ -2,9 +2,21 @@ from fastapi import APIRouter
 from app.services.harmonizer_observations import harmonize_observations
 from app.services.validator_observations import validate_observations
 from app.services.ontology_observations_mapper import map_observations
-from app.services.harmonizer_events import harmonize_events
-from app.services.validator_events import validate_events
-from app.services.ontology_events_mapper import map_events
+from app.services.harmonizer_events import (
+    harmonize_events,
+    harmonize_argon_prediction   # ✅ ADD THIS
+)
+
+from app.services.validator_events import (
+    validate_events,
+    validate_argon_prediction     # ✅ ADD THIS
+)
+
+from app.services.ontology_events_mapper import (
+    map_events,
+    map_argon_prediction          # ✅ ADD THIS
+)
+
 
 router = APIRouter(
     prefix="/fdif/cep",   # ✅ FIX URL
