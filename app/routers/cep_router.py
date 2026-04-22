@@ -37,3 +37,12 @@ def ingest_argon_observations(raw: dict):
         "status": "success",
         "instances_created": result
     }
+
+@router.post("/events/melito", summary="Ingest Melito Events")
+def ingest_melito_events(raw: dict):
+    return {"status": "not implemented yet"}
+
+
+@router.post("/events/argon-prediction", summary="Ingest Argon Predictions")
+def ingest_argon_predictions(raw: dict):
+    return {"status": "not implemented yet"}
