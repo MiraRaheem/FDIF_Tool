@@ -94,3 +94,84 @@ def map_events(data):
         "eventId": event_id,
         "observations": created_observations
     }
+
+def map_argon_prediction(data):
+
+    machine_id = f"Machine_{data['machineId']}"
+    sensor_id = data["sensorId"]
+    event_id = data["eventId"]
+    timestamp = data["timestamp"]
+
+    created_observations = []
+
+    # -----------------------------
+    # 1. CREATE OBSERVATIONS (basedOn)
+    # -----------------------------
+    for r in data["basedOn"]:
+
+        param = r["type"]
+        obs_id = f"OBS_PRED_{timestamp}_{param}_{data['machineId']}"
+
+        if not instance_exists("ConditionSensorObservation", obs_id):
+
+            create_instance("ConditionSensorObservation", {
+                "individualName": obs_id,
+                "dataProperties": [
+                    {"property": "observationID", "value": obs_id},
+                    {"property": "observedValue", "value": r["value"]},
+                    {"property": "observationTimestamp", "value": timestamp},
+                    {"property": "unitOfMeasureSensor", "value": r["unit"]}
+                ]
+            })
+
+        # Observation ↔ Sensor
+        link_bidirectional(
+            "ConditionSensorObservation", obs_id, "conditionObservedBy",
+            "ConditionMonitoringSensor", sensor_id, "observesCondition"
+        )
+
+        # Sensor ↔ Parameter
+        link_bidirectional(
+            "ConditionMonitoringSensor", sensor_id, "monitorsPhysicalParam",
+            "PhysicalParameter", param, "physicalParamMonitoredBy"
+        )
+
+        created_observations.append(obs_id)
+
+    # -----------------------------
+    # 2. CREATE Predictive Event
+    # -----------------------------
+    if not instance_exists("PredictiveMaintenanceEvent", event_id):
+
+        create_instance("PredictiveMaintenanceEvent", {
+            "individualName": event_id,
+            "dataProperties": [
+                {"property": "eventID", "value": event_id},
+                {"property": "eventTimestamp", "value": timestamp},
+                {"property": "eventSeverity", "value": data["severity"]},
+                {"property": "eventDescription", "value": data["description"]}
+            ]
+        })
+
+    # -----------------------------
+    # 3. LINK EVENT ↔ MACHINE
+    # -----------------------------
+    link_bidirectional(
+        "PredictiveMaintenanceEvent", event_id, "affectsMachine",
+        "Machine", machine_id, "machineAffectedByEvent"
+    )
+
+    # -----------------------------
+    # 4. LINK OBSERVATIONS ↔ EVENT (CRITICAL)
+    # -----------------------------
+    for obs_id in created_observations:
+
+        link_bidirectional(
+            "ConditionSensorObservation", obs_id, "triggersMaintenanceEvent",
+            "PredictiveMaintenanceEvent", event_id, "maintenanceEventTriggeredBy"
+        )
+
+    return {
+        "eventId": event_id,
+        "observations": created_observations
+    }
