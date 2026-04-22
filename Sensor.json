@@ -3,10 +3,10 @@
     "individualName": "VS_MELITO_0",
     "className": "ConditionMonitoringSensor",
     "dataProperties": [
-      {"property": "hasSensorID", "value": "VS_MELITO_0"},
-      {"property": "hasSensorName", "value": "Melito Sensor 0"},
+      {"property": "sensorID", "value": "VS_MELITO_0"},
+      {"property": "sensorName", "value": "Melito Sensor 0"},
         
-      {"property": "hasSamplingRateSeconds", "value": 5}
+      {"property": "samplingFrequency", "value": 5}
     ],
     "objectProperties": [
       {"property": "isDeployedOnMachine", "value": "Machine_0"}
@@ -16,10 +16,10 @@
     "individualName": "VS_ARGON_0",
     "className": "ConditionMonitoringSensor",
     "dataProperties": [
-      {"property": "hasSensorID", "value": "VS_ARGON_0"},
-      {"property": "hasSensorName", "value": "Argon Sensor 0"},
+      {"property": "sensorID", "value": "VS_ARGON_0"},
+      {"property": "sensorName", "value": "Argon Sensor 0"},
         
-      {"property": "hasSamplingRateSeconds", "value": 5}
+      {"property": "samplingFrequency", "value": 5}
     ],
     "objectProperties": [
       {"property": "isDeployedOnMachine", "value": "Machine_0"}
@@ -30,10 +30,10 @@
     "individualName": "VS_MELITO_1",
     "className": "ConditionMonitoringSensor",
     "dataProperties": [
-      {"property": "hasSensorID", "value": "VS_MELITO_1"},
-      {"property": "hasSensorName", "value": "Melito Sensor 1"},
+      {"property": "sensorID", "value": "VS_MELITO_1"},
+      {"property": "sensorName", "value": "Melito Sensor 1"},
         
-      {"property": "hasSamplingRateSeconds", "value": 5}
+      {"property": "samplingFrequency", "value": 5}
     ],
     "objectProperties": [
       {"property": "isDeployedOnMachine", "value": "Machine_1"}
@@ -43,10 +43,10 @@
     "individualName": "VS_ARGON_1",
     "className": "ConditionMonitoringSensor",
     "dataProperties": [
-      {"property": "hasSensorID", "value": "VS_ARGON_1"},
-      {"property": "hasSensorName", "value": "Argon Sensor 1"},
+      {"property": "sensorID", "value": "VS_ARGON_1"},
+      {"property": "sensorName", "value": "Argon Sensor 1"},
         
-      {"property": "hasSamplingRateSeconds", "value": 5}
+      {"property": "samplingFrequency", "value": 5}
     ],
     "objectProperties": [
       {"property": "isDeployedOnMachine", "value": "Machine_1"}
@@ -57,10 +57,10 @@
     "individualName": "VS_MELITO_2",
     "className": "ConditionMonitoringSensor",
     "dataProperties": [
-      {"property": "hasSensorID", "value": "VS_MELITO_2"},
-      {"property": "hasSensorName", "value": "Melito Sensor 2"},
+      {"property": "sensorID", "value": "VS_MELITO_2"},
+      {"property": "sensorName", "value": "Melito Sensor 2"},
         
-      {"property": "hasSamplingRateSeconds", "value": 5}
+      {"property": "samplingFrequency", "value": 5}
     ],
     "objectProperties": [
       {"property": "isDeployedOnMachine", "value": "Machine_2"}
@@ -70,9 +70,9 @@
     "individualName": "VS_ARGON_2",
     "className": "ConditionMonitoringSensor",
     "dataProperties": [
-      {"property": "hasSensorID", "value": "VS_ARGON_2"},
-      {"property": "hasSensorName", "value": "Argon Sensor 2"},
-      {"property": "hasSamplingRateSeconds", "value": 5}
+      {"property": "sensorID", "value": "VS_ARGON_2"},
+      {"property": "sensorName", "value": "Argon Sensor 2"},
+      {"property": "samplingFrequency", "value": 5}
     ],
     "objectProperties": [
       {"property": "isDeployedOnMachine", "value": "Machine_2"}
@@ -83,9 +83,9 @@
     "individualName": "VS_MELITO_3",
     "className": "ConditionMonitoringSensor",
     "dataProperties": [
-      {"property": "hasSensorID", "value": "VS_MELITO_3"},
-      {"property": "hasSensorName", "value": "Melito Sensor 3"},
-      {"property": "hasSamplingRateSeconds", "value": 5}
+      {"property": "sensorID", "value": "VS_MELITO_3"},
+      {"property": "sensorName", "value": "Melito Sensor 3"},
+      {"property": "samplingFrequency", "value": 5}
     ],
     "objectProperties": [
       {"property": "isDeployedOnMachine", "value": "Machine_3"}
@@ -95,10 +95,10 @@
     "individualName": "VS_ARGON_3",
     "className": "ConditionMonitoringSensor",
     "dataProperties": [
-      {"property": "hasSensorID", "value": "VS_ARGON_3"},
-      {"property": "hasSensorName", "value": "Argon Sensor 3"},
+      {"property": "sensorID", "value": "VS_ARGON_3"},
+      {"property": "sensorName", "value": "Argon Sensor 3"},
         
-      {"property": "hasSamplingRateSeconds", "value": 5}
+      {"property": "samplingFrequency", "value": 5}
     ],
     "objectProperties": [
       {"property": "isDeployedOnMachine", "value": "Machine_3"}
@@ -109,10 +109,10 @@
     "individualName": "VS_MELITO_4",
     "className": "ConditionMonitoringSensor",
     "dataProperties": [
-      {"property": "hasSensorID", "value": "VS_MELITO_4"},
-      {"property": "hasSensorName", "value": "Melito Sensor 4"},
+      {"property": "sensorID", "value": "VS_MELITO_4"},
+      {"property": "sensorName", "value": "Melito Sensor 4"},
         
-      {"property": "hasSamplingRateSeconds", "value": 5}
+      {"property": "samplingFrequency", "value": 5}
     ],
     "objectProperties": [
       {"property": "isDeployedOnMachine", "value": "Machine_4"}
@@ -122,10 +122,10 @@
     "individualName": "VS_ARGON_4",
     "className": "ConditionMonitoringSensor",
     "dataProperties": [
-      {"property": "hasSensorID", "value": "VS_ARGON_4"},
-      {"property": "hasSensorName", "value": "Argon Sensor 4"},
+      {"property": "sensorID", "value": "VS_ARGON_4"},
+      {"property": "sensorName", "value": "Argon Sensor 4"},
         
-      {"property": "hasSamplingRateSeconds", "value": 5}
+      {"property": "samplingFrequency", "value": 5}
     ],
     "objectProperties": [
       {"property": "isDeployedOnMachine", "value": "Machine_4"}
@@ -136,10 +136,10 @@
     "individualName": "VS_MELITO_5",
     "className": "ConditionMonitoringSensor",
     "dataProperties": [
-      {"property": "hasSensorID", "value": "VS_MELITO_5"},
-      {"property": "hasSensorName", "value": "Melito Sensor 5"},
+      {"property": "sensorID", "value": "VS_MELITO_5"},
+      {"property": "sensorName", "value": "Melito Sensor 5"},
         
-      {"property": "hasSamplingRateSeconds", "value": 5}
+      {"property": "samplingFrequency", "value": 5}
     ],
     "objectProperties": [
       {"property": "isDeployedOnMachine", "value": "Machine_5"}
@@ -149,10 +149,10 @@
     "individualName": "VS_ARGON_5",
     "className": "ConditionMonitoringSensor",
     "dataProperties": [
-      {"property": "hasSensorID", "value": "VS_ARGON_5"},
-      {"property": "hasSensorName", "value": "Argon Sensor 5"},
+      {"property": "sensorID", "value": "VS_ARGON_5"},
+      {"property": "sensorName", "value": "Argon Sensor 5"},
         
-      {"property": "hasSamplingRateSeconds", "value": 5}
+      {"property": "samplingFrequency", "value": 5}
     ],
     "objectProperties": [
       {"property": "isDeployedOnMachine", "value": "Machine_5"}
