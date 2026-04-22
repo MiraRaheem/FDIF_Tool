@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 
-from app.routers.frank import router as frank_router
+#from app.routers.frank import router as frank_router
 from app.routers.budatec import router as budatec_router
 from app.routers.medwood import router as medwood_router
 from app.routers.cep_router import router as cep_router  # ✅ NEW
@@ -18,7 +18,7 @@ app = FastAPI(
 app.include_router(budatec_router, prefix="/fdif")
 
 # Frank (already has /fdif/frank inside)
-app.include_router(frank_router)
+#app.include_router(frank_router)
 
 # Medwood
 app.include_router(medwood_router, prefix="/fdif")
