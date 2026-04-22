@@ -35,8 +35,15 @@ def ingest_argon_observations(raw: dict):
 
 @router.post("/events/melito", summary="Ingest Melito Events")
 def ingest_melito_events(raw: dict):
-    return {"status": "not implemented yet"}
 
+    canonical = harmonize_events(raw)
+    validate_events(canonical)
+    result = map_events(canonical)
+
+    return {
+        "status": "success",
+        "event_created": result
+    }
 
 @router.post("/events/argon-prediction", summary="Ingest Argon Predictions")
 def ingest_argon_predictions(raw: dict):
