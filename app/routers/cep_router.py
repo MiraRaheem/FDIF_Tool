@@ -12,14 +12,9 @@ router = APIRouter(
 @router.post("/observations/melito", summary="Ingest Melito Observations")
 def ingest_melito_readings(raw: dict):
 
-    # Step 1 — Harmonize
-    canonical = harmonize_melito_readings(raw)
-
-    # Step 2 — Validate existence (🔥 NEW)
-    validate_melito_entities(canonical)
-
-    # Step 3 — Map
-    result = map_to_ontology(canonical)
+    canonical = harmonize_observations(raw)
+    validate_observations(canonical)
+    result = map_observations(canonical)
 
     return {
         "status": "success",
