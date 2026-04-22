@@ -19,7 +19,7 @@ def link_bidirectional(class_a, id_a, prop_a_to_b,
     })
 
 
-def map_to_ontology(data):
+def map_observations(data):
 
     created = []
 
