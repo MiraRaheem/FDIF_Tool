@@ -9,7 +9,7 @@ router = APIRouter(
 )
 
 
-@router.post("/melito-readings", summary="Ingest Melito Readings")
+@router.post("/observations/melito", summary="Ingest Melito Observations")
 def ingest_melito_readings(raw: dict):
 
     # Step 1 — Harmonize
@@ -20,6 +20,18 @@ def ingest_melito_readings(raw: dict):
 
     # Step 3 — Map
     result = map_to_ontology(canonical)
+
+    return {
+        "status": "success",
+        "instances_created": result
+    }
+
+@router.post("/observations/argon", summary="Ingest Argon Observations")
+def ingest_argon_observations(raw: dict):
+
+    canonical = harmonize_observations(raw)
+    validate_observations(canonical)
+    result = map_observations(canonical)
 
     return {
         "status": "success",
