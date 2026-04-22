@@ -1,4 +1,4 @@
-def harmonize_melito_readings(raw):
+def harmonize_observations(raw):
 
     return {
         "machineId": raw["machineId"],
