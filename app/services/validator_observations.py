@@ -2,7 +2,7 @@ from fastapi import HTTPException
 from app.services.blueprint_adapter import instance_exists
 
 
-def validate_melito_entities(data):
+def validate_observations(data):
 
     machine_id = f"Machine_{data['machineId']}"
     sensor_id = data["sensorId"]
