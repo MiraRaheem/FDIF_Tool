@@ -1,0 +1,129 @@
+[
+  {
+    "individualName": "Machine_0",
+    "className": "Machine",
+
+    "dataProperties": [
+      {"property": "hasMachineID", "value": 0},
+      {"property": "hasMachineName", "value": "Melito M600 - 0"},
+      {"property": "hasMachineType", "value": "3D Printer"},
+      {"property": "hasEnergyRatingKW", "value": 7.5},
+      {"property": "hasInstallationDate", "value": "2023-01-10"},
+      {"property": "hasOperationalStatus", "value": "Available"},
+      {"property": "hasLastMaintenanceDate", "value": "2026-03-01"},
+      {"property": "hasCycleTimeSeconds", "value": 45},
+      {"property": "hasMaxCapacityPerHour", "value": 80},
+      {"property": "hasManufacturer", "value": "Melito Industries"}
+    ],
+
+    "objectProperties": [
+      {"property": "monitoredByConditionSensor", "value": "VS_ARGON_0"},
+      {"property": "monitoredByProdSensor", "value": "VS_MELITO_0"}
+    ]
+  },
+
+  {
+    "individualName": "Machine_1",
+    "className": "Machine",
+    "dataProperties": [
+      {"property": "hasMachineID", "value": 1},
+      {"property": "hasMachineName", "value": "Melito M600 - 1"},
+      {"property": "hasMachineType", "value": "3D Printer"},
+      {"property": "hasEnergyRatingKW", "value": 7.2},
+      {"property": "hasInstallationDate", "value": "2023-02-15"},
+      {"property": "hasOperationalStatus", "value": "In Use"},
+      {"property": "hasLastMaintenanceDate", "value": "2026-03-10"},
+      {"property": "hasCycleTimeSeconds", "value": 50},
+      {"property": "hasMaxCapacityPerHour", "value": 75},
+      {"property": "hasManufacturer", "value": "Melito Industries"}
+    ],
+    "objectProperties": [
+      {"property": "monitoredByConditionSensor", "value": "VS_ARGON_1"},
+      {"property": "monitoredByProdSensor", "value": "VS_MELITO_1"}
+    ]
+  },
+
+  {
+    "individualName": "Machine_2",
+    "className": "Machine",
+    "dataProperties": [
+      {"property": "hasMachineID", "value": 2},
+      {"property": "hasMachineName", "value": "Melito M600 - 2"},
+      {"property": "hasMachineType", "value": "3D Printer"},
+      {"property": "hasEnergyRatingKW", "value": 7.8},
+      {"property": "hasInstallationDate", "value": "2023-03-20"},
+      {"property": "hasOperationalStatus", "value": "Available"},
+      {"property": "hasLastMaintenanceDate", "value": "2026-02-25"},
+      {"property": "hasCycleTimeSeconds", "value": 47},
+      {"property": "hasMaxCapacityPerHour", "value": 85},
+      {"property": "hasManufacturer", "value": "Melito Industries"}
+    ],
+    "objectProperties": [
+      {"property": "monitoredByConditionSensor", "value": "VS_ARGON_2"},
+      {"property": "monitoredByProdSensor", "value": "VS_MELITO_2"}
+    ]
+  },
+
+  {
+    "individualName": "Machine_3",
+    "className": "Machine",
+    "dataProperties": [
+      {"property": "hasMachineID", "value": 3},
+      {"property": "hasMachineName", "value": "Melito M600 - 3"},
+      {"property": "hasMachineType", "value": "3D Printer"},
+      {"property": "hasEnergyRatingKW", "value": 8.0},
+      {"property": "hasInstallationDate", "value": "2023-04-05"},
+      {"property": "hasOperationalStatus", "value": "Under Maintenance"},
+      {"property": "hasLastMaintenanceDate", "value": "2026-04-01"},
+      {"property": "hasCycleTimeSeconds", "value": 52},
+      {"property": "hasMaxCapacityPerHour", "value": 70},
+      {"property": "hasManufacturer", "value": "Melito Industries"}
+    ],
+    "objectProperties": [
+      {"property": "monitoredByConditionSensor", "value": "VS_ARGON_3"},
+      {"property": "monitoredByProdSensor", "value": "VS_MELITO_3"}
+    ]
+  },
+
+  {
+    "individualName": "Machine_4",
+    "className": "Machine",
+    "dataProperties": [
+      {"property": "hasMachineID", "value": 4},
+      {"property": "hasMachineName", "value": "Melito M600 - 4"},
+      {"property": "hasMachineType", "value": "3D Printer"},
+      {"property": "hasEnergyRatingKW", "value": 7.1},
+      {"property": "hasInstallationDate", "value": "2023-05-12"},
+      {"property": "hasOperationalStatus", "value": "Available"},
+      {"property": "hasLastMaintenanceDate", "value": "2026-03-18"},
+      {"property": "hasCycleTimeSeconds", "value": 46},
+      {"property": "hasMaxCapacityPerHour", "value": 82},
+      {"property": "hasManufacturer", "value": "Melito Industries"}
+    ],
+    "objectProperties": [
+      {"property": "monitoredByConditionSensor", "value": "VS_ARGON_4"},
+      {"property": "monitoredByProdSensor", "value": "VS_MELITO_4"}
+    ]
+  },
+
+  {
+    "individualName": "Machine_5",
+    "className": "Machine",
+    "dataProperties": [
+      {"property": "hasMachineID", "value": 5},
+      {"property": "hasMachineName", "value": "Melito M600 - 5"},
+      {"property": "hasMachineType", "value": "3D Printer"},
+      {"property": "hasEnergyRatingKW", "value": 7.6},
+      {"property": "hasInstallationDate", "value": "2023-06-01"},
+      {"property": "hasOperationalStatus", "value": "In Use"},
+      {"property": "hasLastMaintenanceDate", "value": "2026-03-22"},
+      {"property": "hasCycleTimeSeconds", "value": 48},
+      {"property": "hasMaxCapacityPerHour", "value": 78},
+      {"property": "hasManufacturer", "value": "Melito Industries"}
+    ],
+    "objectProperties": [
+      {"property": "monitoredByConditionSensor", "value": "VS_ARGON_5"},
+      {"property": "monitoredByProdSensor", "value": "VS_MELITO_5"}
+    ]
+  }
+]
