@@ -3,242 +3,660 @@
     "individualName": "Param_StorageTemperature",
     "className": "PhysicalParameter",
     "dataProperties": [
-      {"property": "parameterID", "value": "storageTemperature"},
-      {"property": "parameterName", "value": "Storage Temperature"},
-      {"property": "criticalityLevel", "value": "High"},
-      {"property": "thresholdValue", "value": 45},
-      {"property": "comparisonOperator", "value": ">"},
-      {"property": "unitOfMeasurement", "value": "°C"},
-      {"property": "parameterDescription", "value": "Temperature of storage environment"}
+      {
+        "property": "parameterID",
+        "value": "storageTemperature"
+      },
+      {
+        "property": "parameterName",
+        "value": "Storage Temperature"
+      },
+      {
+        "property": "criticalityLevel",
+        "value": "High"
+      },
+      {
+        "property": "thresholdValue",
+        "value": 45
+      },
+      {
+        "property": "comparisonOperator",
+        "value": ">"
+      },
+      {
+        "property": "unitOfMeasurement",
+        "value": "°C"
+      },
+      {
+        "property": "parameterDescription",
+        "value": "Temperature of storage environment"
+      }
     ],
     "objectProperties": [
-      {"property": "physicalParamMonitoredBy", "value": "VS_MELITO_0"},
-      {"property": "physicalParamMonitoredBy", "value": "VS_MELITO_1"},
-      {"property": "physicalParamMonitoredBy", "value": "VS_MELITO_2"},
-      {"property": "physicalParamMonitoredBy", "value": "VS_MELITO_3"},
-      {"property": "physicalParamMonitoredBy", "value": "VS_MELITO_4"},
-      {"property": "physicalParamMonitoredBy", "value": "VS_MELITO_5"}
+      {
+        "property": "physicalParamMonitoredBy",
+        "value": "VS_MELITO_0"
+      },
+      {
+        "property": "physicalParamMonitoredBy",
+        "value": "VS_MELITO_1"
+      },
+      {
+        "property": "physicalParamMonitoredBy",
+        "value": "VS_MELITO_2"
+      },
+      {
+        "property": "physicalParamMonitoredBy",
+        "value": "VS_MELITO_3"
+      },
+      {
+        "property": "physicalParamMonitoredBy",
+        "value": "VS_MELITO_4"
+      },
+      {
+        "property": "physicalParamMonitoredBy",
+        "value": "VS_MELITO_5"
+      }
     ]
   },
-
   {
     "individualName": "Param_StorageHumidity",
     "className": "PhysicalParameter",
     "dataProperties": [
-      {"property": "parameterID", "value": "storageHumidity"},
-      {"property": "parameterName", "value": "Storage Humidity"},
-      {"property": "criticalityLevel", "value": "Medium"},
-      {"property": "thresholdValue", "value": 70},
-      {"property": "comparisonOperator", "value": ">"},
-      {"property": "unitOfMeasurement", "value": "%"},
-      {"property": "parameterDescription", "value": "Humidity level in storage environment"}
+      {
+        "property": "parameterID",
+        "value": "storageHumidity"
+      },
+      {
+        "property": "parameterName",
+        "value": "Storage Humidity"
+      },
+      {
+        "property": "criticalityLevel",
+        "value": "Medium"
+      },
+      {
+        "property": "thresholdValue",
+        "value": 70
+      },
+      {
+        "property": "comparisonOperator",
+        "value": ">"
+      },
+      {
+        "property": "unitOfMeasurement",
+        "value": "%"
+      },
+      {
+        "property": "parameterDescription",
+        "value": "Humidity level in storage environment"
+      }
     ],
     "objectProperties": [
-      {"property": "physicalParamMonitoredBy", "value": "VS_MELITO_0"},
-      {"property": "physicalParamMonitoredBy", "value": "VS_MELITO_1"},
-      {"property": "physicalParamMonitoredBy", "value": "VS_MELITO_2"},
-      {"property": "physicalParamMonitoredBy", "value": "VS_MELITO_3"},
-      {"property": "physicalParamMonitoredBy", "value": "VS_MELITO_4"},
-      {"property": "physicalParamMonitoredBy", "value": "VS_MELITO_5"}
+      {
+        "property": "physicalParamMonitoredBy",
+        "value": "VS_MELITO_0"
+      },
+      {
+        "property": "physicalParamMonitoredBy",
+        "value": "VS_MELITO_1"
+      },
+      {
+        "property": "physicalParamMonitoredBy",
+        "value": "VS_MELITO_2"
+      },
+      {
+        "property": "physicalParamMonitoredBy",
+        "value": "VS_MELITO_3"
+      },
+      {
+        "property": "physicalParamMonitoredBy",
+        "value": "VS_MELITO_4"
+      },
+      {
+        "property": "physicalParamMonitoredBy",
+        "value": "VS_MELITO_5"
+      }
     ]
   },
-
   {
     "individualName": "Param_OperatingTemperature",
     "className": "PhysicalParameter",
     "dataProperties": [
-      {"property": "parameterID", "value": "operatingTemperature"},
-      {"property": "parameterName", "value": "Operating Temperature"},
-      {"property": "criticalityLevel", "value": "Critical"},
-      {"property": "thresholdValue", "value": 8},
-      {"property": "comparisonOperator", "value": "<"},
-      {"property": "unitOfMeasurement", "value": "°C"},
-      {"property": "parameterDescription", "value": "Temperature during machine operation"}
+      {
+        "property": "parameterID",
+        "value": "operatingTemperature"
+      },
+      {
+        "property": "parameterName",
+        "value": "Operating Temperature"
+      },
+      {
+        "property": "criticalityLevel",
+        "value": "Critical"
+      },
+      {
+        "property": "thresholdValue",
+        "value": 8
+      },
+      {
+        "property": "comparisonOperator",
+        "value": "<"
+      },
+      {
+        "property": "unitOfMeasurement",
+        "value": "°C"
+      },
+      {
+        "property": "parameterDescription",
+        "value": "Temperature during machine operation"
+      }
     ],
     "objectProperties": [
-      {"property": "physicalParamMonitoredBy", "value": "VS_MELITO_0"},
-      {"property": "physicalParamMonitoredBy", "value": "VS_MELITO_1"},
-      {"property": "physicalParamMonitoredBy", "value": "VS_MELITO_2"},
-      {"property": "physicalParamMonitoredBy", "value": "VS_MELITO_3"},
-      {"property": "physicalParamMonitoredBy", "value": "VS_MELITO_4"},
-      {"property": "physicalParamMonitoredBy", "value": "VS_MELITO_5"}
+      {
+        "property": "physicalParamMonitoredBy",
+        "value": "VS_MELITO_0"
+      },
+      {
+        "property": "physicalParamMonitoredBy",
+        "value": "VS_MELITO_1"
+      },
+      {
+        "property": "physicalParamMonitoredBy",
+        "value": "VS_MELITO_2"
+      },
+      {
+        "property": "physicalParamMonitoredBy",
+        "value": "VS_MELITO_3"
+      },
+      {
+        "property": "physicalParamMonitoredBy",
+        "value": "VS_MELITO_4"
+      },
+      {
+        "property": "physicalParamMonitoredBy",
+        "value": "VS_MELITO_5"
+      }
     ]
   },
-
   {
     "individualName": "Param_CompressedAirInput",
     "className": "PhysicalParameter",
     "dataProperties": [
-      {"property": "parameterID", "value": "compressedAirInput"},
-      {"property": "parameterName", "value": "Compressed Air Input"},
-      {"property": "criticalityLevel", "value": "High"},
-      {"property": "thresholdValue", "value": 6.8},
-      {"property": "comparisonOperator", "value": "<"},
-      {"property": "unitOfMeasurement", "value": "bar"},
-      {"property": "parameterDescription", "value": "Air pressure supplied to machine"}
+      {
+        "property": "parameterID",
+        "value": "compressedAirInput"
+      },
+      {
+        "property": "parameterName",
+        "value": "Compressed Air Input"
+      },
+      {
+        "property": "criticalityLevel",
+        "value": "High"
+      },
+      {
+        "property": "thresholdValue",
+        "value": 6.8
+      },
+      {
+        "property": "comparisonOperator",
+        "value": "<"
+      },
+      {
+        "property": "unitOfMeasurement",
+        "value": "bar"
+      },
+      {
+        "property": "parameterDescription",
+        "value": "Air pressure supplied to machine"
+      }
     ],
     "objectProperties": [
-      {"property": "physicalParamMonitoredBy", "value": "VS_MELITO_0"},
-      {"property": "physicalParamMonitoredBy", "value": "VS_MELITO_1"},
-      {"property": "physicalParamMonitoredBy", "value": "VS_MELITO_2"},
-      {"property": "physicalParamMonitoredBy", "value": "VS_MELITO_3"},
-      {"property": "physicalParamMonitoredBy", "value": "VS_MELITO_4"},
-      {"property": "physicalParamMonitoredBy", "value": "VS_MELITO_5"}
+      {
+        "property": "physicalParamMonitoredBy",
+        "value": "VS_MELITO_0"
+      },
+      {
+        "property": "physicalParamMonitoredBy",
+        "value": "VS_MELITO_1"
+      },
+      {
+        "property": "physicalParamMonitoredBy",
+        "value": "VS_MELITO_2"
+      },
+      {
+        "property": "physicalParamMonitoredBy",
+        "value": "VS_MELITO_3"
+      },
+      {
+        "property": "physicalParamMonitoredBy",
+        "value": "VS_MELITO_4"
+      },
+      {
+        "property": "physicalParamMonitoredBy",
+        "value": "VS_MELITO_5"
+      }
     ]
   },
-
   {
     "individualName": "Param_NozzleOperationTime",
     "className": "PhysicalParameter",
     "dataProperties": [
-      {"property": "parameterID", "value": "nozzleOperationTime"},
-      {"property": "parameterName", "value": "Nozzle Operation Time"},
-      {"property": "criticalityLevel", "value": "Low"},
-      {"property": "thresholdValue", "value": 0},
-      {"property": "comparisonOperator", "value": "<="},
-      {"property": "unitOfMeasurement", "value": "hours"},
-      {"property": "parameterDescription", "value": "Remaining lifetime of nozzle"}
+      {
+        "property": "parameterID",
+        "value": "nozzleOperationTime"
+      },
+      {
+        "property": "parameterName",
+        "value": "Nozzle Operation Time"
+      },
+      {
+        "property": "criticalityLevel",
+        "value": "Low"
+      },
+      {
+        "property": "thresholdValue",
+        "value": 0
+      },
+      {
+        "property": "comparisonOperator",
+        "value": "<="
+      },
+      {
+        "property": "unitOfMeasurement",
+        "value": "hours"
+      },
+      {
+        "property": "parameterDescription",
+        "value": "Remaining lifetime of nozzle"
+      }
     ],
     "objectProperties": [
-      {"property": "physicalParamMonitoredBy", "value": "VS_MELITO_0"},
-      {"property": "physicalParamMonitoredBy", "value": "VS_MELITO_1"},
-      {"property": "physicalParamMonitoredBy", "value": "VS_MELITO_2"},
-      {"property": "physicalParamMonitoredBy", "value": "VS_MELITO_3"},
-      {"property": "physicalParamMonitoredBy", "value": "VS_MELITO_4"},
-      {"property": "physicalParamMonitoredBy", "value": "VS_MELITO_5"}
+      {
+        "property": "physicalParamMonitoredBy",
+        "value": "VS_MELITO_0"
+      },
+      {
+        "property": "physicalParamMonitoredBy",
+        "value": "VS_MELITO_1"
+      },
+      {
+        "property": "physicalParamMonitoredBy",
+        "value": "VS_MELITO_2"
+      },
+      {
+        "property": "physicalParamMonitoredBy",
+        "value": "VS_MELITO_3"
+      },
+      {
+        "property": "physicalParamMonitoredBy",
+        "value": "VS_MELITO_4"
+      },
+      {
+        "property": "physicalParamMonitoredBy",
+        "value": "VS_MELITO_5"
+      }
     ]
   },
-
   {
     "individualName": "Param_ArgonBottle1Level",
     "className": "PhysicalParameter",
     "dataProperties": [
-      {"property": "parameterID", "value": "argonBottle1Level"},
-      {"property": "parameterName", "value": "Argon Bottle 1 Level"},
-      {"property": "criticalityLevel", "value": "Medium"},
-      {"property": "thresholdValue", "value": 10},
-      {"property": "comparisonOperator", "value": "<"},
-      {"property": "unitOfMeasurement", "value": "%"},
-      {"property": "parameterDescription", "value": "Remaining gas level in bottle 1"}
+      {
+        "property": "parameterID",
+        "value": "argonBottle1Level"
+      },
+      {
+        "property": "parameterName",
+        "value": "Argon Bottle 1 Level"
+      },
+      {
+        "property": "criticalityLevel",
+        "value": "Medium"
+      },
+      {
+        "property": "thresholdValue",
+        "value": 10
+      },
+      {
+        "property": "comparisonOperator",
+        "value": "<"
+      },
+      {
+        "property": "unitOfMeasurement",
+        "value": "%"
+      },
+      {
+        "property": "parameterDescription",
+        "value": "Remaining gas level in bottle 1"
+      }
     ],
     "objectProperties": [
-      {"property": "physicalParamMonitoredBy", "value": "VS_ARGON_0"},
-      {"property": "physicalParamMonitoredBy", "value": "VS_ARGON_1"},
-      {"property": "physicalParamMonitoredBy", "value": "VS_ARGON_2"},
-      {"property": "physicalParamMonitoredBy", "value": "VS_ARGON_3"},
-      {"property": "physicalParamMonitoredBy", "value": "VS_ARGON_4"},
-      {"property": "physicalParamMonitoredBy", "value": "VS_ARGON_5"}
+      {
+        "property": "physicalParamMonitoredBy",
+        "value": "VS_ARGON_0"
+      },
+      {
+        "property": "physicalParamMonitoredBy",
+        "value": "VS_ARGON_1"
+      },
+      {
+        "property": "physicalParamMonitoredBy",
+        "value": "VS_ARGON_2"
+      },
+      {
+        "property": "physicalParamMonitoredBy",
+        "value": "VS_ARGON_3"
+      },
+      {
+        "property": "physicalParamMonitoredBy",
+        "value": "VS_ARGON_4"
+      },
+      {
+        "property": "physicalParamMonitoredBy",
+        "value": "VS_ARGON_5"
+      }
     ]
-  }
-]
-[
+  },
   {
     "individualName": "Param_AveragePowerConsumption",
     "className": "PhysicalParameter",
     "dataProperties": [
-      {"property": "parameterID", "value": "averagePowerConsumption"},
-      {"property": "parameterName", "value": "Average Power Consumption"},
-      {"property": "criticalityLevel", "value": "Medium"},
-      {"property": "thresholdValue", "value": 7.5},
-      {"property": "comparisonOperator", "value": ">"},
-      {"property": "unitOfMeasurement", "value": "kW"},
-      {"property": "parameterDescription", "value": "Average energy consumption during operation"}
+      {
+        "property": "parameterID",
+        "value": "averagePowerConsumption"
+      },
+      {
+        "property": "parameterName",
+        "value": "Average Power Consumption"
+      },
+      {
+        "property": "criticalityLevel",
+        "value": "Medium"
+      },
+      {
+        "property": "thresholdValue",
+        "value": 7.5
+      },
+      {
+        "property": "comparisonOperator",
+        "value": ">"
+      },
+      {
+        "property": "unitOfMeasurement",
+        "value": "kW"
+      },
+      {
+        "property": "parameterDescription",
+        "value": "Average energy consumption during operation"
+      }
     ],
     "objectProperties": [
-      {"property": "physicalParamMonitoredBy", "value": "VS_MELITO_0"},
-      {"property": "physicalParamMonitoredBy", "value": "VS_MELITO_1"},
-      {"property": "physicalParamMonitoredBy", "value": "VS_MELITO_2"},
-      {"property": "physicalParamMonitoredBy", "value": "VS_MELITO_3"},
-      {"property": "physicalParamMonitoredBy", "value": "VS_MELITO_4"},
-      {"property": "physicalParamMonitoredBy", "value": "VS_MELITO_5"}
+      {
+        "property": "physicalParamMonitoredBy",
+        "value": "VS_MELITO_0"
+      },
+      {
+        "property": "physicalParamMonitoredBy",
+        "value": "VS_MELITO_1"
+      },
+      {
+        "property": "physicalParamMonitoredBy",
+        "value": "VS_MELITO_2"
+      },
+      {
+        "property": "physicalParamMonitoredBy",
+        "value": "VS_MELITO_3"
+      },
+      {
+        "property": "physicalParamMonitoredBy",
+        "value": "VS_MELITO_4"
+      },
+      {
+        "property": "physicalParamMonitoredBy",
+        "value": "VS_MELITO_5"
+      }
     ]
   },
-
   {
     "individualName": "Param_NoiseChillerLevel",
     "className": "PhysicalParameter",
     "dataProperties": [
-      {"property": "parameterID", "value": "noiseChillerLevel"},
-      {"property": "parameterName", "value": "Noise Chiller Level"},
-      {"property": "criticalityLevel", "value": "Low"},
-      {"property": "thresholdValue", "value": 55},
-      {"property": "comparisonOperator", "value": ">"},
-      {"property": "unitOfMeasurement", "value": "dB"},
-      {"property": "parameterDescription", "value": "Noise level of the chiller system"}
+      {
+        "property": "parameterID",
+        "value": "noiseChillerLevel"
+      },
+      {
+        "property": "parameterName",
+        "value": "Noise Chiller Level"
+      },
+      {
+        "property": "criticalityLevel",
+        "value": "Low"
+      },
+      {
+        "property": "thresholdValue",
+        "value": 55
+      },
+      {
+        "property": "comparisonOperator",
+        "value": ">"
+      },
+      {
+        "property": "unitOfMeasurement",
+        "value": "dB"
+      },
+      {
+        "property": "parameterDescription",
+        "value": "Noise level of the chiller system"
+      }
     ],
     "objectProperties": [
-      {"property": "physicalParamMonitoredBy", "value": "VS_MELITO_0"},
-      {"property": "physicalParamMonitoredBy", "value": "VS_MELITO_1"},
-      {"property": "physicalParamMonitoredBy", "value": "VS_MELITO_2"},
-      {"property": "physicalParamMonitoredBy", "value": "VS_MELITO_3"},
-      {"property": "physicalParamMonitoredBy", "value": "VS_MELITO_4"},
-      {"property": "physicalParamMonitoredBy", "value": "VS_MELITO_5"}
+      {
+        "property": "physicalParamMonitoredBy",
+        "value": "VS_MELITO_0"
+      },
+      {
+        "property": "physicalParamMonitoredBy",
+        "value": "VS_MELITO_1"
+      },
+      {
+        "property": "physicalParamMonitoredBy",
+        "value": "VS_MELITO_2"
+      },
+      {
+        "property": "physicalParamMonitoredBy",
+        "value": "VS_MELITO_3"
+      },
+      {
+        "property": "physicalParamMonitoredBy",
+        "value": "VS_MELITO_4"
+      },
+      {
+        "property": "physicalParamMonitoredBy",
+        "value": "VS_MELITO_5"
+      }
     ]
   },
-
   {
     "individualName": "Param_PowerPeakConsumption",
     "className": "PhysicalParameter",
     "dataProperties": [
-      {"property": "parameterID", "value": "powerPeakConsumption"},
-      {"property": "parameterName", "value": "Power Peak Consumption"},
-      {"property": "criticalityLevel", "value": "High"},
-      {"property": "thresholdValue", "value": 11.0},
-      {"property": "comparisonOperator", "value": ">"},
-      {"property": "unitOfMeasurement", "value": "kW"},
-      {"property": "parameterDescription", "value": "Maximum peak power consumption"}
+      {
+        "property": "parameterID",
+        "value": "powerPeakConsumption"
+      },
+      {
+        "property": "parameterName",
+        "value": "Power Peak Consumption"
+      },
+      {
+        "property": "criticalityLevel",
+        "value": "High"
+      },
+      {
+        "property": "thresholdValue",
+        "value": 11
+      },
+      {
+        "property": "comparisonOperator",
+        "value": ">"
+      },
+      {
+        "property": "unitOfMeasurement",
+        "value": "kW"
+      },
+      {
+        "property": "parameterDescription",
+        "value": "Maximum peak power consumption"
+      }
     ],
     "objectProperties": [
-      {"property": "physicalParamMonitoredBy", "value": "VS_MELITO_0"},
-      {"property": "physicalParamMonitoredBy", "value": "VS_MELITO_1"},
-      {"property": "physicalParamMonitoredBy", "value": "VS_MELITO_2"},
-      {"property": "physicalParamMonitoredBy", "value": "VS_MELITO_3"},
-      {"property": "physicalParamMonitoredBy", "value": "VS_MELITO_4"},
-      {"property": "physicalParamMonitoredBy", "value": "VS_MELITO_5"}
+      {
+        "property": "physicalParamMonitoredBy",
+        "value": "VS_MELITO_0"
+      },
+      {
+        "property": "physicalParamMonitoredBy",
+        "value": "VS_MELITO_1"
+      },
+      {
+        "property": "physicalParamMonitoredBy",
+        "value": "VS_MELITO_2"
+      },
+      {
+        "property": "physicalParamMonitoredBy",
+        "value": "VS_MELITO_3"
+      },
+      {
+        "property": "physicalParamMonitoredBy",
+        "value": "VS_MELITO_4"
+      },
+      {
+        "property": "physicalParamMonitoredBy",
+        "value": "VS_MELITO_5"
+      }
     ]
   },
-
   {
     "individualName": "Param_ArgonBottle2Level",
     "className": "PhysicalParameter",
     "dataProperties": [
-      {"property": "parameterID", "value": "argonBottle2Level"},
-      {"property": "parameterName", "value": "Argon Bottle 2 Level"},
-      {"property": "criticalityLevel", "value": "Medium"},
-      {"property": "thresholdValue", "value": 10},
-      {"property": "comparisonOperator", "value": "<"},
-      {"property": "unitOfMeasurement", "value": "%"},
-      {"property": "parameterDescription", "value": "Remaining gas level in bottle 2"}
+      {
+        "property": "parameterID",
+        "value": "argonBottle2Level"
+      },
+      {
+        "property": "parameterName",
+        "value": "Argon Bottle 2 Level"
+      },
+      {
+        "property": "criticalityLevel",
+        "value": "Medium"
+      },
+      {
+        "property": "thresholdValue",
+        "value": 10
+      },
+      {
+        "property": "comparisonOperator",
+        "value": "<"
+      },
+      {
+        "property": "unitOfMeasurement",
+        "value": "%"
+      },
+      {
+        "property": "parameterDescription",
+        "value": "Remaining gas level in bottle 2"
+      }
     ],
     "objectProperties": [
-      {"property": "physicalParamMonitoredBy", "value": "VS_ARGON_0"},
-      {"property": "physicalParamMonitoredBy", "value": "VS_ARGON_1"},
-      {"property": "physicalParamMonitoredBy", "value": "VS_ARGON_2"},
-      {"property": "physicalParamMonitoredBy", "value": "VS_ARGON_3"},
-      {"property": "physicalParamMonitoredBy", "value": "VS_ARGON_4"},
-      {"property": "physicalParamMonitoredBy", "value": "VS_ARGON_5"}
+      {
+        "property": "physicalParamMonitoredBy",
+        "value": "VS_ARGON_0"
+      },
+      {
+        "property": "physicalParamMonitoredBy",
+        "value": "VS_ARGON_1"
+      },
+      {
+        "property": "physicalParamMonitoredBy",
+        "value": "VS_ARGON_2"
+      },
+      {
+        "property": "physicalParamMonitoredBy",
+        "value": "VS_ARGON_3"
+      },
+      {
+        "property": "physicalParamMonitoredBy",
+        "value": "VS_ARGON_4"
+      },
+      {
+        "property": "physicalParamMonitoredBy",
+        "value": "VS_ARGON_5"
+      }
     ]
   },
-
   {
     "individualName": "Param_ArgonBottle3Level",
     "className": "PhysicalParameter",
     "dataProperties": [
-      {"property": "parameterID", "value": "argonBottle3Level"},
-      {"property": "parameterName", "value": "Argon Bottle 3 Level"},
-      {"property": "criticalityLevel", "value": "Medium"},
-      {"property": "thresholdValue", "value": 10},
-      {"property": "comparisonOperator", "value": "<"},
-      {"property": "unitOfMeasurement", "value": "%"},
-      {"property": "parameterDescription", "value": "Remaining gas level in bottle 3"}
+      {
+        "property": "parameterID",
+        "value": "argonBottle3Level"
+      },
+      {
+        "property": "parameterName",
+        "value": "Argon Bottle 3 Level"
+      },
+      {
+        "property": "criticalityLevel",
+        "value": "Medium"
+      },
+      {
+        "property": "thresholdValue",
+        "value": 10
+      },
+      {
+        "property": "comparisonOperator",
+        "value": "<"
+      },
+      {
+        "property": "unitOfMeasurement",
+        "value": "%"
+      },
+      {
+        "property": "parameterDescription",
+        "value": "Remaining gas level in bottle 3"
+      }
     ],
     "objectProperties": [
-      {"property": "physicalParamMonitoredBy", "value": "VS_ARGON_0"},
-      {"property": "physicalParamMonitoredBy", "value": "VS_ARGON_1"},
-      {"property": "physicalParamMonitoredBy", "value": "VS_ARGON_2"},
-      {"property": "physicalParamMonitoredBy", "value": "VS_ARGON_3"},
-      {"property": "physicalParamMonitoredBy", "value": "VS_ARGON_4"},
-      {"property": "physicalParamMonitoredBy", "value": "VS_ARGON_5"}
+      {
+        "property": "physicalParamMonitoredBy",
+        "value": "VS_ARGON_0"
+      },
+      {
+        "property": "physicalParamMonitoredBy",
+        "value": "VS_ARGON_1"
+      },
+      {
+        "property": "physicalParamMonitoredBy",
+        "value": "VS_ARGON_2"
+      },
+      {
+        "property": "physicalParamMonitoredBy",
+        "value": "VS_ARGON_3"
+      },
+      {
+        "property": "physicalParamMonitoredBy",
+        "value": "VS_ARGON_4"
+      },
+      {
+        "property": "physicalParamMonitoredBy",
+        "value": "VS_ARGON_5"
+      }
     ]
   }
 ]
