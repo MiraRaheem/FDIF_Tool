@@ -1,4 +1,5 @@
-from app.services.blueprint_adapter import create_instance, update_instance
+from app.services.blueprint_adapter import update_instance, create_instance, instance_exists
+
 
 def link_bidirectional(class_a, id_a, prop_a_to_b,
                        class_b, id_b, prop_b_to_a):
@@ -16,6 +17,8 @@ def link_bidirectional(class_a, id_a, prop_a_to_b,
             {"property": prop_b_to_a, "value": id_a}
         ]
     })
+
+
 def map_to_ontology(data):
 
     created = []
@@ -25,29 +28,8 @@ def map_to_ontology(data):
     timestamp = data["timestamp"]
 
     # -----------------------------
-    # 1. CREATE MACHINE
-    # -----------------------------
-    create_instance("Machine", {
-        "individualName": machine_id,
-        "dataProperties": [
-            {"property": "hasMachineID", "value": data["machineId"]}
-        ]
-    })
-
-    # -----------------------------
-    # 2. CREATE SENSOR
-    # -----------------------------
-    create_instance("ConditionMonitoringSensor", {
-        "individualName": sensor_id,
-        "dataProperties": [
-            {"property": "sensorID", "value": sensor_id},
-            {"property": "sensorStatus", "value": "Active"},
-            {"property": "sensorType", "value": "ProductionPerformanceSensor"}
-        ]
-    })
-
-    # -----------------------------
-    # 3. LINK SENSOR ↔ MACHINE
+    # 1. LINK SENSOR ↔ MACHINE
+    # (NO CREATION — assumed existing)
     # -----------------------------
     link_bidirectional(
         "ConditionMonitoringSensor", sensor_id, "isDeployedOnMachine",
@@ -55,11 +37,11 @@ def map_to_ontology(data):
     )
 
     # -----------------------------
-    # 4. LOOP READINGS → OBSERVATIONS
+    # 2. LOOP READINGS → OBSERVATIONS
     # -----------------------------
     for r in data["readings"]:
 
-        # Skip invalid values (optional but recommended)
+        # Skip invalid values
         if r["value"] is None:
             continue
 
@@ -67,18 +49,13 @@ def map_to_ontology(data):
         obs_id = f"OBS_{timestamp}_{param_name}_{data['machineId']}"
 
         # -----------------------------
-        # 4.1 CREATE PARAMETER
+        # 2.1 DEDUP OBSERVATION
         # -----------------------------
-        create_instance("PhysicalParameter", {
-            "individualName": param_name,
-            "dataProperties": [
-                {"property": "parameterName", "value": param_name},
-                {"property": "unitOfMeasurement", "value": r["unit"]}
-            ]
-        })
+        if instance_exists("ConditionSensorObservation", obs_id):
+            continue
 
         # -----------------------------
-        # 4.2 CREATE OBSERVATION
+        # 2.2 CREATE OBSERVATION ONLY
         # -----------------------------
         create_instance("ConditionSensorObservation", {
             "individualName": obs_id,
@@ -91,7 +68,7 @@ def map_to_ontology(data):
         })
 
         # -----------------------------
-        # 4.3 LINK OBSERVATION ↔ SENSOR
+        # 2.3 LINK OBSERVATION ↔ SENSOR
         # -----------------------------
         link_bidirectional(
             "ConditionSensorObservation", obs_id, "conditionObservedBy",
@@ -99,7 +76,8 @@ def map_to_ontology(data):
         )
 
         # -----------------------------
-        # 4.4 LINK SENSOR ↔ PARAMETER
+        # 2.4 LINK SENSOR ↔ PARAMETER
+        # (NO CREATION — assumed existing)
         # -----------------------------
         link_bidirectional(
             "ConditionMonitoringSensor", sensor_id, "monitorsPhysicalParam",
