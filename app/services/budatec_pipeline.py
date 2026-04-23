@@ -10,6 +10,11 @@ from app.services.harmonizer_budatec_customer import harmonize_budatec_customer
 from app.services.validator_budatec_customer import validate_budatec_customer
 from app.services.blueprint_adapter import create_budatec_customer
 from app.services.budatec_utils import extract_rows, normalize_supplier, normalize_customer
+
+from app.services.harmonizer_budatec_item import harmonize_budatec_item
+from app.services.validator_budatec_item import validate_budatec_item
+from app.services.blueprint_adapter import create_budatec_item
+from app.services.budatec_utils import normalize_item
 import json
 
 
@@ -125,6 +130,62 @@ def process_customer_excel(file):
     return {
         "status": "completed",
         "entity": "customer",
+        "total": len(rows),
+        "results": results[:10]
+    }
+
+
+def process_item_json(body):
+
+    raw = body.get("data", {})
+
+    if isinstance(raw, str):
+        raw = json.loads(raw)
+
+    raw = normalize_item(raw)
+
+    canonical = harmonize_budatec_item(raw)
+    validated = validate_budatec_item(canonical)
+    result = create_budatec_item(validated)
+
+    return {
+        "status": "success",
+        "entity": "item",
+        "canonical": canonical,
+        "blueprint": result
+    }
+
+def process_item_excel(file):
+
+    rows = extract_rows(file.file)
+
+    results = []
+
+    for i, row in enumerate(rows):
+
+        try:
+            row = normalize_item(row)
+
+            canonical = harmonize_budatec_item(row)
+            validated = validate_budatec_item(canonical)
+            blueprint = create_budatec_item(validated)
+
+            results.append({
+                "row": i,
+                "status": "success",
+                "id": validated["productId"]
+            })
+
+        except Exception as e:
+            results.append({
+                "row": i,
+                "status": "error",
+                "error": str(e)
+            })
+
+    return {
+        "status": "completed",
+        "entity": "item",
         "total": len(rows),
         "results": results[:10]
     }
