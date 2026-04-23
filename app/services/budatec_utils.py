@@ -55,7 +55,8 @@ def extract_rows(file):
     # -----------------------------
     # EXTRACT HEADERS
     # -----------------------------
-    headers = df_raw.iloc[header_row_idx].tolist()
+    raw_headers = df_raw.iloc[header_row_idx].tolist()
+    headers = build_structured_headers(raw_headers)
     headers = headers[1:]
     headers = [h for h in headers if h not in [None, "~"]]
 
@@ -79,6 +80,7 @@ def extract_rows(file):
     df_data = df_data.dropna(how="all")
 
     df_data = df_data.iloc[:, 1:]
+    df_data = df_data.iloc[:, :len(headers)]
     df_data = df_data.iloc[:, :len(headers)]
     df_data.columns = headers
 
@@ -129,3 +131,64 @@ def normalize_item(row):
         row["item_code"] = sanitize_id(row["item_code"])
 
     return row
+
+
+def build_structured_headers(raw_headers):
+    structured = []
+    current_section = "item"
+
+    for h in raw_headers:
+
+        h = str(h).strip()
+
+        # skip empty
+        if not h or h == "~":
+            continue
+
+        # detect sections
+        if "UOM" in h:
+            current_section = "uom"
+            continue
+        elif "Supplier" in h:
+            current_section = "supplier"
+            continue
+        elif "Customer" in h:
+            current_section = "customer"
+            continue
+        elif "Tax" in h:
+            current_section = "tax"
+            continue
+        elif "Barcode" in h:
+            current_section = "barcode"
+            continue
+
+        structured.append(f"{current_section}__{h}")
+
+    return structured
+
+
+def split_item_row(row):
+
+    item = {
+        k.replace("item__", ""): v
+        for k, v in row.items()
+        if k.startswith("item__")
+    }
+
+    supplier = {
+        k.replace("supplier__", ""): v
+        for k, v in row.items()
+        if k.startswith("supplier__")
+    }
+
+    customer = {
+        k.replace("customer__", ""): v
+        for k, v in row.items()
+        if k.startswith("customer__")
+    }
+
+    return {
+        "item": item,
+        "supplier": supplier,
+        "customer": customer
+    }
