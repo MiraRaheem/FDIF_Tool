@@ -69,3 +69,20 @@ def process_supplier_excel(file):
         "total": len(rows),
         "results": results[:10]
     }
+
+def process_customer_json(body):
+
+    raw = body.get("data", {})
+
+    raw = normalize_customer(raw)
+
+    canonical = harmonize_budatec_customer(raw)
+    validated = validate_budatec_customer(canonical)
+    result = create_budatec_customer(validated)
+
+    return {
+        "status": "success",
+        "entity": "customer",
+        "canonical": canonical,
+        "blueprint": result
+    }
