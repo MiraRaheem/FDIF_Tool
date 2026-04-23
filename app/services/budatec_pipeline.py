@@ -179,6 +179,8 @@ def process_item_excel(file):
             # -------- CUSTOMER (optional) --------
             if split["customer"].get("customer_name"):
                 process_customer_json({"data": split["customer"]})
+
+            print("split", split)
             validated = validate_budatec_item(canonical)
             blueprint = create_budatec_item(validated)
 
