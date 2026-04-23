@@ -13,7 +13,16 @@ def harmonize_budatec_item(raw):
         "price": raw.get("valuation_rate"),
 
         "expiryDate": raw.get("end_of_life"),
-
         "bomId": raw.get("default_bom"),
-        "isManufacturable": raw.get("include_item_in_manufacturing")
+
+        # 🔥 NEW
+        "supplier": {
+            "supplierId": raw.get("supplier"),
+            "supplierPartNo": raw.get("supplier_part_no")
+        },
+
+        "customer": {
+            "customerId": raw.get("customer"),
+            "customerName": raw.get("customer_name")
+        }
     }
