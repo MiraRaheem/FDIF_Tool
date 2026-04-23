@@ -157,7 +157,7 @@ def process_item_json(body):
 
 def process_item_excel(file):
 
-    rows = extract_rows(file.file)
+    rows = extract_item_rows(file.file)
 
     results = []
 
