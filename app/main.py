@@ -1,7 +1,8 @@
 from fastapi import FastAPI
 
 
-from app.routers.budatec import router as budatec_router
+from app.routers.budatec.supplier import router as supplier_router
+from app.routers.budatec.customer import router as customer_router
 from app.routers.medwood import router as medwood_router
 from app.routers.cep_router import router as cep_router  # ✅ NEW
 from app.routers.ontology_bootstrap import router as ontology_router
@@ -15,7 +16,9 @@ app = FastAPI(
 # -------- ROUTERS --------
 
 # Budatec
-app.include_router(budatec_router, prefix="/fdif")
+app.include_router(supplier_router)
+app.include_router(customer_router)
+
 
 # Medwood
 app.include_router(medwood_router, prefix="/fdif")
