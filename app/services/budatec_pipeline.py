@@ -10,7 +10,7 @@ from app.services.harmonizer_budatec_customer import harmonize_budatec_customer
 from app.services.validator_budatec_customer import validate_budatec_customer
 from app.services.blueprint_adapter import create_budatec_customer
 from app.services.budatec_utils import extract_rows, normalize_supplier, normalize_customer
-
+from app.services.budatec_utils import split_item_row
 from app.services.harmonizer_budatec_item import harmonize_budatec_item
 from app.services.validator_budatec_item import validate_budatec_item
 from app.services.blueprint_adapter import create_budatec_item
@@ -164,9 +164,21 @@ def process_item_excel(file):
     for i, row in enumerate(rows):
 
         try:
-            row = normalize_item(row)
+            split = split_item_row(row)
 
-            canonical = harmonize_budatec_item(row)
+            # -------- ITEM --------
+            item = normalize_item(split["item"])
+            canonical = harmonize_budatec_item(item)
+            validated = validate_budatec_item(canonical)
+            create_budatec_item(validated)
+            
+            # -------- SUPPLIER (optional) --------
+            if split["supplier"].get("supplier"):
+                process_supplier_json({"data": split["supplier"]})
+            
+            # -------- CUSTOMER (optional) --------
+            if split["customer"].get("customer_name"):
+                process_customer_json({"data": split["customer"]})
             validated = validate_budatec_item(canonical)
             blueprint = create_budatec_item(validated)
 
