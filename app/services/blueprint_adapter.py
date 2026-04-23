@@ -416,7 +416,7 @@ def create_supplier_instance(canonical):
 
     return create_instance("MaterialSupplier", payload)
 
-
+"""
 def create_budatec_item(canonical):
 
     product_id = sanitize_id(canonical["productId"])
@@ -468,4 +468,104 @@ def create_budatec_item(canonical):
         "status": "success",
         "productId": product_id
     }
+"""
 
+def create_budatec_item(canonical):
+
+    product_id = sanitize_id(canonical["productId"])
+    product_name = f"Product_{product_id}"
+
+    # -----------------------------
+    # 1. CREATE PRODUCT
+    # -----------------------------
+    create_instance("Product", {
+        "individualName": product_name,
+        "dataProperties": clean_properties([
+            {"property": "hasProductID", "value": product_id},
+            {"property": "hasProductName", "value": canonical.get("productName")},
+            {"property": "hasProductDescription", "value": canonical.get("description")},
+            {"property": "hasProductCategory", "value": canonical.get("category")},
+            {"property": "hasProductUnit", "value": canonical.get("unit")},
+            {"property": "hasProductWeight", "value": canonical.get("weight")},
+            {"property": "hasProductCost", "value": canonical.get("cost")},
+            {"property": "hasProductPrice", "value": canonical.get("price")},
+            {"property": "hasExpiryDate", "value": canonical.get("expiryDate")}
+        ])
+    })
+
+    # -----------------------------
+    # 2. BOM (same as before)
+    # -----------------------------
+    bom_id = canonical.get("bomId")
+
+    if bom_id:
+        bom_name = f"MBOM_{sanitize_id(bom_id)}"
+
+        create_instance("MBOM", {
+            "individualName": bom_name,
+            "dataProperties": [
+                {"property": "hasMBOM_ID", "value": bom_id}
+            ]
+        })
+
+        update_instance("Product", product_name, {
+            "objectProperties": [
+                {"property": "hasBOM", "value": bom_name}
+            ]
+        })
+
+    # -----------------------------
+    # 3. SUPPLIER LINK
+    # -----------------------------
+    supplier = canonical.get("supplier")
+
+    if supplier and supplier.get("supplierId"):
+
+        supplier_name = ensure_supplier_exists(supplier)
+
+        update_instance("Product", product_name, {
+            "objectProperties": [
+                {"property": "hasSupplier", "value": supplier_name}
+            ]
+        })
+
+    # -----------------------------
+    # 4. CUSTOMER LINK
+    # -----------------------------
+    customer = canonical.get("customer")
+
+    if customer and customer.get("customerId"):
+
+        customer_name = ensure_customer_exists(customer)
+
+        update_instance("Product", product_name, {
+            "objectProperties": [
+                {"property": "hasCustomer", "value": customer_name}
+            ]
+        })
+
+    return {
+        "status": "success",
+        "productId": product_id
+    }
+
+def ensure_supplier_exists(canonical_supplier):
+
+    supplier_id = sanitize_id(canonical_supplier["supplierId"])
+    supplier_name = f"Supplier_{supplier_id}"
+
+    if not instance_exists("Supplier", supplier_name):
+        create_budatec_supplier(canonical_supplier)
+
+    return supplier_name
+
+
+def ensure_customer_exists(canonical_customer):
+
+    customer_id = sanitize_id(canonical_customer["customerId"])
+    customer_name = f"Customer_{customer_id}"
+
+    if not instance_exists("Customer", customer_name):
+        create_budatec_customer(canonical_customer)
+
+    return customer_name
