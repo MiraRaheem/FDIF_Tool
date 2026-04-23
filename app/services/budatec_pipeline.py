@@ -5,7 +5,10 @@ from app.services.blueprint_adapter import create_budatec_supplier
 from app.services.harmonizer_budatec_customer import harmonize_budatec_customer
 from app.services.validator_budatec_customer import validate_budatec_customer
 from app.services.blueprint_adapter import create_budatec_customer
-
+from app.services.budatec_utils import extract_rows, normalize_customer
+from app.services.harmonizer_budatec_customer import harmonize_budatec_customer
+from app.services.validator_budatec_customer import validate_budatec_customer
+from app.services.blueprint_adapter import create_budatec_customer
 from app.services.budatec_utils import extract_rows, normalize_supplier, normalize_customer
 import json
 
@@ -85,4 +88,43 @@ def process_customer_json(body):
         "entity": "customer",
         "canonical": canonical,
         "blueprint": result
+    }
+
+# =========================
+# CUSTOMER (EXCEL)
+# =========================
+
+def process_customer_excel(file):
+
+    rows = extract_rows(file.file)
+
+    results = []
+
+    for i, row in enumerate(rows):
+
+        try:
+            row = normalize_customer(row)
+
+            canonical = harmonize_budatec_customer(row)
+            validated = validate_budatec_customer(canonical)
+            blueprint = create_budatec_customer(validated)
+
+            results.append({
+                "row": i,
+                "status": "success",
+                "id": validated.get("customerId")
+            })
+
+        except Exception as e:
+            results.append({
+                "row": i,
+                "status": "error",
+                "error": str(e)
+            })
+
+    return {
+        "status": "completed",
+        "entity": "customer",
+        "total": len(rows),
+        "results": results[:10]
     }
