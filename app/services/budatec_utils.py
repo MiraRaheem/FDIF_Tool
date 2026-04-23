@@ -122,3 +122,10 @@ def normalize_customer(row):
         row["name"] = sanitize_id(row["customer_name"])
 
     return row
+
+def normalize_item(row):
+
+    if row.get("item_code"):
+        row["item_code"] = sanitize_id(row["item_code"])
+
+    return row
