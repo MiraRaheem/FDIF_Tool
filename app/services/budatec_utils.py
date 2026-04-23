@@ -34,8 +34,69 @@ def clean_value(v):
 # =========================
 # EXCEL EXTRACTION
 # =========================
-
 def extract_rows(file):
+
+    df_raw = pd.read_excel(file, header=None)
+
+    # -----------------------------
+    # FIND HEADER ROW
+    # -----------------------------
+    header_row_idx = None
+
+    for i, row in df_raw.iterrows():
+        if str(row[0]).strip() == "Column Name:":
+            header_row_idx = i
+            break
+
+    if header_row_idx is None:
+        raise Exception("Column Name row not found")
+
+    # -----------------------------
+    # EXTRACT HEADERS
+    # -----------------------------
+    headers = df_raw.iloc[header_row_idx].tolist()
+    headers = headers[1:]
+    headers = [h for h in headers if h not in [None, "~"]]
+
+    # -----------------------------
+    # FIND DATA START
+    # -----------------------------
+    data_start_idx = None
+
+    for i, row in df_raw.iterrows():
+        if "Start entering data below this line" in str(row[0]):
+            data_start_idx = i + 1
+            break
+
+    if data_start_idx is None:
+        raise Exception("Data start row not found")
+
+    # -----------------------------
+    # EXTRACT DATA
+    # -----------------------------
+    df_data = df_raw.iloc[data_start_idx:].copy()
+    df_data = df_data.dropna(how="all")
+
+    df_data = df_data.iloc[:, 1:]
+    df_data = df_data.iloc[:, :len(headers)]
+    df_data.columns = headers
+
+    rows = df_data.to_dict(orient="records")
+
+    # -----------------------------
+    # CLEAN VALUES
+    # -----------------------------
+    cleaned_rows = []
+
+    for row in rows:
+        new_row = {k: clean_value(v) for k, v in row.items()}
+        cleaned_rows.append(new_row)
+
+    return cleaned_rows
+
+
+
+def extract_items_rows(file):
 
     df_raw = pd.read_excel(file, header=None)
 
