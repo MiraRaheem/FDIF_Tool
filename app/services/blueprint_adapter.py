@@ -417,3 +417,55 @@ def create_supplier_instance(canonical):
     return create_instance("MaterialSupplier", payload)
 
 
+def create_budatec_item(canonical):
+
+    product_id = sanitize_id(canonical["productId"])
+    product_name = f"Product_{product_id}"
+
+    # -----------------------------
+    # CREATE PRODUCT
+    # -----------------------------
+    create_instance("Product", {
+        "individualName": product_name,
+        "dataProperties": clean_properties([
+            {"property": "hasProductID", "value": product_id},
+            {"property": "hasProductName", "value": canonical.get("productName")},
+            {"property": "hasProductDescription", "value": canonical.get("description")},
+            {"property": "hasProductCategory", "value": canonical.get("category")},
+            {"property": "hasProductUnit", "value": canonical.get("unit")},
+            {"property": "hasProductWeight", "value": canonical.get("weight")},
+            {"property": "hasProductCost", "value": canonical.get("cost")},
+            {"property": "hasProductPrice", "value": canonical.get("price")},
+            {"property": "hasExpiryDate", "value": canonical.get("expiryDate")}
+        ]),
+        "objectProperties": []
+    })
+
+    # -----------------------------
+    # OPTIONAL: BOM
+    # -----------------------------
+    bom_id = canonical.get("bomId")
+
+    if bom_id:
+
+        bom_name = f"MBOM_{sanitize_id(bom_id)}"
+
+        create_instance("MBOM", {
+            "individualName": bom_name,
+            "dataProperties": [
+                {"property": "hasMBOM_ID", "value": bom_id}
+            ],
+            "objectProperties": []
+        })
+
+        update_instance("Product", product_name, {
+            "objectProperties": [
+                {"property": "hasBOM", "value": bom_name}
+            ]
+        })
+
+    return {
+        "status": "success",
+        "productId": product_id
+    }
+
