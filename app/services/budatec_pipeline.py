@@ -167,6 +167,7 @@ def process_item_excel(file):
 
         try:
             split = split_item_row(row)
+            print("SPLIT:", split)
 
             # -------- ITEM --------
             item = normalize_item(split["item"])
