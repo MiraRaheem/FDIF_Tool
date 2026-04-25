@@ -26,4 +26,6 @@ async def upload_items(file: UploadFile = File(...)):
         return process_item_excel(file)
 
     except Exception as e:
-        raise HTTPException(400, str(e))
+        import traceback
+        print(traceback.format_exc())   # 👈 THIS IS CRITICAL
+        raise HTTPException(status_code=400, detail=str(e))
