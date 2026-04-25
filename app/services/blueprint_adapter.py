@@ -14,7 +14,8 @@ INSTANCE_CACHE = {
     "ProductionMonitoringSensor": set(),
     "ProductionMetric": set(),
     "ProductionSensorObservation": set(),
-    "MaintenanceEvent": set()  # ✅ ADD THIS
+    "MaintenanceEvent": set(),  # ✅ ADD THIS
+    "ConditionMonitoringSensor": set()
 }
 def sanitize_id(value: str) -> str:
     if not value:
