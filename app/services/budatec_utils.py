@@ -52,7 +52,7 @@ def extract_rows(file):
         raise Exception("Column Name row not found")
 
     # -----------------------------
-    # EXTRACT HEADERS (SIMPLE)
+    # EXTRACT HEADERS
     # -----------------------------
     headers = df_raw.iloc[header_row_idx].tolist()
     headers = headers[1:]
@@ -78,6 +78,7 @@ def extract_rows(file):
     df_data = df_data.dropna(how="all")
 
     df_data = df_data.iloc[:, 1:]
+    df_data = df_data.iloc[:, :len(headers)]
     df_data.columns = headers
 
     rows = df_data.to_dict(orient="records")
