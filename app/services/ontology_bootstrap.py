@@ -77,17 +77,19 @@ def bootstrap_ontology():
     # =========================
 
     # ---- Machines → Sensors ----
-    for machine in machines:
+    from app.services.blueprint_adapter import append_object_properties
 
-        update_instance(
+    # ---- Machines → Sensors ----
+    for machine in machines:
+    
+        append_object_properties(
             "Machine",
             machine["individualName"],
-            {
-                "objectProperties": machine.get("objectProperties", [])
-            }
+            machine.get("objectProperties", [])
         )
         results["relationships_updated"] += 1
 
+    
     # ---- Sensors → Machines ----
     for sensor in sensors:
 
