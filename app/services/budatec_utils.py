@@ -72,17 +72,19 @@ def extract_rows(file):
         raise Exception("Data start row not found")
 
     # -----------------------------
-    # EXTRACT DATA
+    # 4. EXTRACT DATA
     # -----------------------------
     df_data = df_raw.iloc[data_start_idx:].copy()
     df_data = df_data.dropna(how="all")
-
+    
+    # align BOTH sides the same way
     df_data = df_data.iloc[:, 1:]
-    df_data = df_data.iloc[:, :len(headers)]
-    df_data.columns = headers
-
-    rows = df_data.to_dict(orient="records")
-
+    structured_headers = structured_headers[1:]
+    
+    # now lengths match
+    df_data.columns = structured_headers
+    print("DF COLS:", df_data.shape[1])
+    print("HEADERS:", len(structured_headers))
     # -----------------------------
     # CLEAN VALUES
     # -----------------------------
