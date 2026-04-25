@@ -181,7 +181,32 @@ def create_customer_metadata(customer_id, metadata):
 
     return create_instance("CustomerMetadata", payload)
     
+def append_object_properties(class_name, instance_id, new_props):
 
+    # 1. Get existing instance
+    r = requests.get(f"{BASE_URL}/api/{class_name}/{instance_id}")
+    existing = r.json()
+
+    current_props = existing.get("objectProperties", [])
+
+    # 2. Normalize (API sometimes returns dict-style data)
+    if isinstance(current_props, dict):
+        current_props = [
+            {"property": k, "value": v}
+            for k, v in current_props.items()
+        ]
+
+    # 3. Merge without duplicates
+    merged = current_props.copy()
+
+    for new_p in new_props:
+        if new_p not in merged:
+            merged.append(new_p)
+
+    # 4. Update
+    return update_instance(class_name, instance_id, {
+        "objectProperties": merged
+    })
 # -----------------------------
 # Supplier existence
 # -----------------------------
