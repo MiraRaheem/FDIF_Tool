@@ -176,17 +176,23 @@ def extract_items_rows(file):
     # -----------------------------
     df_data = df_raw.iloc[data_start_idx:].copy()
     df_data = df_data.dropna(how="all")
-    
-    # align BOTH sides the same way
+
+    # align both sides
     df_data = df_data.iloc[:, 1:]
     structured_headers = structured_headers[1:]
-    
-    # now lengths match
+
     df_data.columns = structured_headers
+
     print("DF COLS:", df_data.shape[1])
     print("HEADERS:", len(structured_headers))
+
     # -----------------------------
-    # 5. CLEAN VALUES
+    # CONVERT TO ROWS  ✅ (THIS WAS MISSING)
+    # -----------------------------
+    rows = df_data.to_dict(orient="records")
+
+    # -----------------------------
+    # CLEAN VALUES
     # -----------------------------
     cleaned_rows = []
 
@@ -195,8 +201,7 @@ def extract_items_rows(file):
         cleaned_rows.append(new_row)
 
     return cleaned_rows
-
-
+    
 # =========================
 # NORMALIZATION
 # =========================
