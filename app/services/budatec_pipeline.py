@@ -154,7 +154,7 @@ def process_item_json(body):
         "canonical": canonical,
         "blueprint": result
     }
-
+    
 def process_item_excel(file):
 
     from app.services.budatec_utils import extract_items_rows
@@ -170,21 +170,26 @@ def process_item_excel(file):
 
             # -------- ITEM --------
             item = normalize_item(split["item"])
+
+            if not item.get("item_code"):
+                continue
+
             canonical = harmonize_budatec_item(item)
             validated = validate_budatec_item(canonical)
-            create_budatec_item(validated)
-            
-            # -------- SUPPLIER (optional) --------
+            blueprint = create_budatec_item(validated)
+
+            # -------- SUPPLIER --------
             supplier_data = split.get("supplier", {})
+
             if supplier_data and any(v for v in supplier_data.values()):
-                process_supplier_json({"data": supplier_data})  
-            
-            # -------- CUSTOMER (optional) --------
+                process_supplier_json({"data": supplier_data})
+
+            # -------- CUSTOMER --------
             customer_data = split.get("customer", {})
+
             if customer_data and any(v for v in customer_data.values()):
                 process_customer_json({"data": customer_data})
-            print("split", split)
-            
+
             results.append({
                 "row": i,
                 "status": "success",
