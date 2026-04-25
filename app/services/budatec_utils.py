@@ -180,6 +180,7 @@ def extract_items_rows(file):
 
     # align both sides
     df_data = df_data.iloc[:, 1:]
+    structured_headers = structured_headers[1:]
     
 
     df_data.columns = structured_headers
