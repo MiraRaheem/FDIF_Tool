@@ -127,10 +127,6 @@ def extract_items_rows(file):
         raw = str(raw_headers[i])
         col = str(column_names[i]).strip()
 
-        # skip empty columns
-        if not col or col == "~":
-            continue
-
         # -----------------------------
         # SECTION DETECTION (CRITICAL FIX)
         # -----------------------------
@@ -154,8 +150,14 @@ def extract_items_rows(file):
 
         elif "Item" in raw:
             current_section = "item"
-
-        structured_headers.append(f"{current_section}__{col}")
+        # -----------------------------
+        # ALWAYS ADD HEADER (even if empty)
+        # -----------------------------
+        if not col or col == "~":
+            structured_headers.append(f"{current_section}__unknown_{i}")
+        else:
+            structured_headers.append(f"{current_section}__{col}")
+            
 
     # -----------------------------
     # 3. FIND DATA START
@@ -177,7 +179,6 @@ def extract_items_rows(file):
     df_data = df_data.dropna(how="all")
 
     df_data = df_data.iloc[:, 1:]  # skip first column
-    df_data = df_data.iloc[:, :len(structured_headers)]
     df_data.columns = structured_headers
 
     rows = df_data.to_dict(orient="records")
