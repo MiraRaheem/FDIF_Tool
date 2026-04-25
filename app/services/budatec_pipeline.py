@@ -157,7 +157,9 @@ def process_item_json(body):
 
 def process_item_excel(file):
 
-    rows = extract_item_rows(file.file)
+    from app.services.budatec_utils import extract_items_rows
+
+    rows = extract_items_rows(file.file)
 
     results = []
 
@@ -173,17 +175,16 @@ def process_item_excel(file):
             create_budatec_item(validated)
             
             # -------- SUPPLIER (optional) --------
-            if split["supplier"].get("supplier"):
-                process_supplier_json({"data": split["supplier"]})
+            supplier_data = split.get("supplier", {})
+            if supplier_data and any(v for v in supplier_data.values()):
+                process_supplier_json({"data": supplier_data})  
             
             # -------- CUSTOMER (optional) --------
-            if split["customer"].get("customer_name"):
-                process_customer_json({"data": split["customer"]})
-
+            customer_data = split.get("customer", {})
+            if customer_data and any(v for v in customer_data.values()):
+                process_customer_json({"data": customer_data})
             print("split", split)
-            validated = validate_budatec_item(canonical)
-            blueprint = create_budatec_item(validated)
-
+            
             results.append({
                 "row": i,
                 "status": "success",
