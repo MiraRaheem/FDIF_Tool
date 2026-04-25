@@ -52,7 +52,7 @@ def extract_rows(file):
         raise Exception("Column Name row not found")
 
     # -----------------------------
-    # EXTRACT HEADERS
+    # EXTRACT HEADERS (SIMPLE)
     # -----------------------------
     headers = df_raw.iloc[header_row_idx].tolist()
     headers = headers[1:]
@@ -72,19 +72,16 @@ def extract_rows(file):
         raise Exception("Data start row not found")
 
     # -----------------------------
-    # 4. EXTRACT DATA
+    # EXTRACT DATA
     # -----------------------------
     df_data = df_raw.iloc[data_start_idx:].copy()
     df_data = df_data.dropna(how="all")
-    
-    # align BOTH sides the same way
+
     df_data = df_data.iloc[:, 1:]
-    structured_headers = structured_headers[1:]
-    
-    # now lengths match
-    df_data.columns = structured_headers
-    print("DF COLS:", df_data.shape[1])
-    print("HEADERS:", len(structured_headers))
+    df_data.columns = headers
+
+    rows = df_data.to_dict(orient="records")
+
     # -----------------------------
     # CLEAN VALUES
     # -----------------------------
@@ -95,7 +92,6 @@ def extract_rows(file):
         cleaned_rows.append(new_row)
 
     return cleaned_rows
-
 
 
 def extract_items_rows(file):
@@ -179,12 +175,15 @@ def extract_items_rows(file):
     # -----------------------------
     df_data = df_raw.iloc[data_start_idx:].copy()
     df_data = df_data.dropna(how="all")
-
-    df_data = df_data.iloc[:, 1:]  # skip first column
+    
+    # align BOTH sides the same way
+    df_data = df_data.iloc[:, 1:]
+    structured_headers = structured_headers[1:]
+    
+    # now lengths match
     df_data.columns = structured_headers
-
-    rows = df_data.to_dict(orient="records")
-
+    print("DF COLS:", df_data.shape[1])
+    print("HEADERS:", len(structured_headers))
     # -----------------------------
     # 5. CLEAN VALUES
     # -----------------------------
