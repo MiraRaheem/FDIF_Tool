@@ -18,7 +18,7 @@
 
     "objectProperties": [
       {"property": "monitoredByConditionSensor", "value": "VS_ARGON_0"},
-      {"property": "monitoredByProdSensor", "value": "VS_MELITO_0"}
+      {"property": "monitoredByConditionSensor", "value": "VS_MELITO_0"}
     ]
   },
 
@@ -39,7 +39,7 @@
     ],
     "objectProperties": [
       {"property": "monitoredByConditionSensor", "value": "VS_ARGON_1"},
-      {"property": "monitoredByProdSensor", "value": "VS_MELITO_1"}
+      {"property": "monitoredByConditionSensor", "value": "VS_MELITO_1"}
     ]
   },
 
@@ -60,7 +60,7 @@
     ],
     "objectProperties": [
       {"property": "monitoredByConditionSensor", "value": "VS_ARGON_2"},
-      {"property": "monitoredByProdSensor", "value": "VS_MELITO_2"}
+      {"property": "monitoredByConditionSensor", "value": "VS_MELITO_2"}
     ]
   },
 
@@ -81,7 +81,7 @@
     ],
     "objectProperties": [
       {"property": "monitoredByConditionSensor", "value": "VS_ARGON_3"},
-      {"property": "monitoredByProdSensor", "value": "VS_MELITO_3"}
+      {"property": "monitoredByConditionSensor", "value": "VS_MELITO_3"}
     ]
   },
 
@@ -102,7 +102,7 @@
     ],
     "objectProperties": [
       {"property": "monitoredByConditionSensor", "value": "VS_ARGON_4"},
-      {"property": "monitoredByProdSensor", "value": "VS_MELITO_4"}
+      {"property": "monitoredByConditionSensor", "value": "VS_MELITO_4"}
     ]
   },
 
@@ -123,7 +123,7 @@
     ],
     "objectProperties": [
       {"property": "monitoredByConditionSensor", "value": "VS_ARGON_5"},
-      {"property": "monitoredByProdSensor", "value": "VS_MELITO_5"}
+      {"property": "monitoredByConditionSensor", "value": "VS_MELITO_5"}
     ]
   }
 ]
