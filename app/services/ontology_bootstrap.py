@@ -92,7 +92,7 @@ def bootstrap_ontology():
     for sensor in sensors:
 
         update_instance(
-            "ConditionSensor",
+            "ConditionMonitoringSensor",
             sensor["individualName"],
             {
                 "objectProperties": sensor.get("objectProperties", [])
