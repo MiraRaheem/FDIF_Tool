@@ -101,7 +101,7 @@ def extract_items_rows(file):
     df_raw = pd.read_excel(file, header=None)
 
     # -----------------------------
-    # FIND HEADER ROW
+    # 1. FIND HEADER ROW ("Column Name:")
     # -----------------------------
     header_row_idx = None
 
@@ -114,15 +114,51 @@ def extract_items_rows(file):
         raise Exception("Column Name row not found")
 
     # -----------------------------
-    # EXTRACT HEADERS
+    # 2. READ TWO HEADER ROWS
     # -----------------------------
-    raw_headers = df_raw.iloc[header_row_idx].tolist()
-    headers = build_structured_headers(raw_headers)
-    headers = headers[1:]
-    headers = [h for h in headers if h not in [None, "~"]]
+    raw_headers = df_raw.iloc[header_row_idx].tolist()         # section row
+    column_names = df_raw.iloc[header_row_idx + 1].tolist()    # actual column names
+
+    structured_headers = []
+    current_section = "item"
+
+    for i in range(len(column_names)):
+
+        raw = str(raw_headers[i])
+        col = str(column_names[i]).strip()
+
+        # skip empty columns
+        if not col or col == "~":
+            continue
+
+        # -----------------------------
+        # SECTION DETECTION (CRITICAL FIX)
+        # -----------------------------
+        if "Item Supplier" in raw:
+            current_section = "supplier"
+
+        elif "Item Customer" in raw:
+            current_section = "customer"
+
+        elif "UOM" in raw:
+            current_section = "uom"
+
+        elif "Barcode" in raw:
+            current_section = "barcode"
+
+        elif "Reorder" in raw:
+            current_section = "reorder"
+
+        elif "Variant" in raw:
+            current_section = "attribute"
+
+        elif "Item" in raw:
+            current_section = "item"
+
+        structured_headers.append(f"{current_section}__{col}")
 
     # -----------------------------
-    # FIND DATA START
+    # 3. FIND DATA START
     # -----------------------------
     data_start_idx = None
 
@@ -135,20 +171,19 @@ def extract_items_rows(file):
         raise Exception("Data start row not found")
 
     # -----------------------------
-    # EXTRACT DATA
+    # 4. EXTRACT DATA
     # -----------------------------
     df_data = df_raw.iloc[data_start_idx:].copy()
     df_data = df_data.dropna(how="all")
 
-    df_data = df_data.iloc[:, 1:]
-    df_data = df_data.iloc[:, :len(headers)]
-    df_data = df_data.iloc[:, :len(headers)]
-    df_data.columns = headers
+    df_data = df_data.iloc[:, 1:]  # skip first column
+    df_data = df_data.iloc[:, :len(structured_headers)]
+    df_data.columns = structured_headers
 
     rows = df_data.to_dict(orient="records")
 
     # -----------------------------
-    # CLEAN VALUES
+    # 5. CLEAN VALUES
     # -----------------------------
     cleaned_rows = []
 
