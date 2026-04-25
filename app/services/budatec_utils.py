@@ -115,9 +115,10 @@ def extract_items_rows(file):
     # -----------------------------
     # 2. READ TWO HEADER ROWS
     # -----------------------------
-    raw_headers = df_raw.iloc[header_row_idx].tolist()         # section row
-    column_names = df_raw.iloc[header_row_idx + 1].tolist()    # actual column names
-
+    raw_headers = df_raw.iloc[header_row_idx-1].tolist()         # section row
+    column_names = df_raw.iloc[header_row_idx ].tolist()    # actual column names
+    print ('raw_headers',raw_headers)
+    print('column_names',column_names)
     structured_headers = []
     current_section = "item"
 
@@ -179,7 +180,7 @@ def extract_items_rows(file):
 
     # align both sides
     df_data = df_data.iloc[:, 1:]
-    structured_headers = structured_headers[1:]
+    
 
     df_data.columns = structured_headers
 
