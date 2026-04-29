@@ -115,3 +115,64 @@ def process_supplier_performance_excel(file):
         "total": len(rows),
         "results": results[:10]
     }
+
+
+import pandas as pd
+
+from app.services.harmonizer import harmonize_medwood_station
+from app.services.validator import validate_station
+from app.services.blueprint_adapter_medwood_station import (
+    create_or_update_station
+)
+
+
+def process_station_json(body):
+
+    raw = body.get("data", {})
+
+    canonical = harmonize_medwood_station(raw)
+    validated = validate_station(canonical)
+
+    result = create_or_update_station(validated)
+
+    return {
+        "status": "success",
+        "entity": "station",
+        "canonical": canonical,
+        "blueprint": result
+    }
+
+
+def process_station_excel(file):
+
+    df = pd.read_excel(file.file)
+    rows = df.to_dict(orient="records")
+
+    results = []
+
+    for i, row in enumerate(rows):
+        try:
+            canonical = harmonize_medwood_station(row)
+            validated = validate_station(canonical)
+
+            create_or_update_station(validated)
+
+            results.append({
+                "row": i,
+                "status": "success",
+                "id": canonical["stationId"]
+            })
+
+        except Exception as e:
+            results.append({
+                "row": i,
+                "status": "error",
+                "error": str(e)
+            })
+
+    return {
+        "status": "completed",
+        "entity": "station",
+        "total": len(rows),
+        "results": results[:10]
+    }
