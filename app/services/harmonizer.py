@@ -23,7 +23,7 @@ def harmonize_medwood_supplier(row):
 def harmonize_supplier_performance(row):
 
     return {
-        "supplierId": row.get("Cuenta del proveedor"),
+        "supplierId": str(row.get("Cuenta del proveedor")),
         "supplierName": row.get("Nombre"),
         "totalDeliveries": row.get("Entregas"),
         "delayedDeliveries": row.get("Retrasos"),
