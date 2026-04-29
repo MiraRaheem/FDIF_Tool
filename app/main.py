@@ -3,7 +3,7 @@ from fastapi import FastAPI
 
 from app.routers.budatec.supplier import router as supplier_router
 from app.routers.budatec.customer import router as customer_router
-from app.routers.medwood import router as medwood_router
+from app.routers.medwood.supplier import router as medwood_supplier_router
 from app.routers.cep_router import router as cep_router  # ✅ NEW
 from app.routers.ontology_bootstrap import router as ontology_router
 from app.routers.cep_data_router import router as cep_data_router
@@ -24,7 +24,7 @@ app.include_router(customer_router)
 app.include_router(item_router)
 
 # Medwood
-app.include_router(medwood_router, prefix="/fdif")
+app.include_router(medwood_supplier_router)
 
 # CEP (Melito + future real-time ingestion)
 app.include_router(cep_router)  # ✅ NEW
