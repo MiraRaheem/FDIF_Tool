@@ -19,46 +19,117 @@ def update_instance(class_name, instance_id, payload):
     return r.json()
 
 
-def get_existing_suppliers():
-    r = requests.get(f"{BASE_URL}/api/MaterialSupplier")
+def get_instances(class_name):
+    r = requests.get(f"{BASE_URL}/api/{class_name}")
     return r.json().get("instances", [])
 
 
+# -----------------------------
+# EXISTENCE CHECKS
+# -----------------------------
+
 def supplier_exists(supplier_id):
-    suppliers = get_existing_suppliers()
+    suppliers = get_instances("MaterialSupplier")
+
     for s in suppliers:
         if isinstance(s, str) and supplier_id in s:
             return True
         if isinstance(s, dict) and s.get("hasSupplierID") == supplier_id:
             return True
+
+    return False
+
+
+def location_exists(location_id):
+    locations = get_instances("Location")
+
+    for loc in locations:
+        if isinstance(loc, str) and location_id in loc:
+            return True
+        if isinstance(loc, dict) and loc.get("individualName") == location_id:
+            return True
+
     return False
 
 
 # -----------------------------
-# MEDWOOD SUPPLIER
+# MEDWOOD SUPPLIER (CREATE OR UPDATE)
 # -----------------------------
 
-def create_supplier_instance(canonical):
+def create_or_update_supplier(canonical):
 
     supplier_id = str(canonical["supplierId"])
+    supplier_name = f"MaterialSupplier_{supplier_id}"
+    location_id = f"Location_{supplier_id}"
 
-    if supplier_exists(supplier_id):
-        return {
-            "status": "exists",
-            "supplierId": supplier_id
-        }
+    # -----------------------------
+    # 1. CREATE OR UPDATE LOCATION
+    # -----------------------------
+    location_payload = {
+        "dataProperties": [
+            {"property": "locationAddress", "value": canonical["location"].get("address")},
+            {"property": "city", "value": canonical["location"].get("city")},
+            {"property": "postalCode", "value": canonical["location"].get("postalCode")},
+            {"property": "country", "value": canonical.get("country")}
+        ]
+    }
 
-    payload = {
-        "individualName": f"MaterialSupplier_{supplier_id}",
+    if location_exists(location_id):
+        update_instance("Location", location_id, location_payload)
+    else:
+        create_instance("Location", {
+            "individualName": location_id,
+            **location_payload,
+            "objectProperties": []
+        })
+
+    # -----------------------------
+    # 2. CREATE OR UPDATE SUPPLIER
+    # -----------------------------
+    supplier_payload = {
         "dataProperties": [
             {"property": "hasSupplierID", "value": supplier_id},
             {"property": "hasSupplierName", "value": canonical.get("supplierName")},
-            {"property": "hasCountry", "value": canonical.get("country")}
-        ],
-        "objectProperties": []
+            {"property": "hasCountry", "value": canonical.get("country")},
+            {"property": "hasCapacity", "value": 0},
+            {"property": "hasLeadTimeDays", "value": 0},
+            {"property": "hasPaymentTerms", "value": "Other"}
+        ]
     }
 
-    return create_instance("MaterialSupplier", payload)
+    if supplier_exists(supplier_id):
+        update_instance("MaterialSupplier", supplier_name, supplier_payload)
+        status = "updated"
+    else:
+        create_instance("MaterialSupplier", {
+            "individualName": supplier_name,
+            **supplier_payload,
+            "objectProperties": []
+        })
+        status = "created"
+
+    # -----------------------------
+    # 3. LINK RELATIONSHIPS (SAFE)
+    # -----------------------------
+
+    # Supplier → Location
+    update_instance("MaterialSupplier", supplier_name, {
+        "objectProperties": [
+            {"property": "locatedAt", "value": location_id}
+        ]
+    })
+
+    # Location → Supplier
+    update_instance("Location", location_id, {
+        "objectProperties": [
+            {"property": "isLocationOfSupplier", "value": supplier_name}
+        ]
+    })
+
+    return {
+        "status": status,
+        "supplierId": supplier_id
+    }
 
 
 # -----------------------------
@@ -76,10 +147,9 @@ def update_supplier_performance(canonical):
             "message": f"Supplier {supplier_id} does not exist"
         }
 
+    # ✔ Use ONLY valid ontology property
     return update_instance("MaterialSupplier", supplier_name, {
         "dataProperties": [
-            {"property": "hasTotalDeliveries", "value": canonical.get("totalDeliveries")},
-            {"property": "hasDelayedDeliveries", "value": canonical.get("delayedDeliveries")},
-            {"property": "hasDelayPercentage", "value": canonical.get("delayPercentage")}
+            {"property": "hasRating", "value": canonical.get("currentEvaluation")}
         ]
     })
