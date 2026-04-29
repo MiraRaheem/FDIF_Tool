@@ -1,8 +1,18 @@
 import pandas as pd
-from app.services.harmonizer import harmonize_medwood_supplier
-from app.services.validator import validate_supplier
-from app.services.blueprint_adapter import create_supplier_instance
+from app.services.harmonizer import (
+    harmonize_medwood_supplier,
+    harmonize_supplier_performance
+)
 
+from app.services.validator import (
+    validate_supplier,
+    validate_supplier_performance
+)
+
+from app.services.blueprint_adapter import (
+    create_supplier_instance,
+    update_supplier_performance   # 👈 you will create this
+)
 
 def process_medwood_supplier_json(body):
 
@@ -49,6 +59,59 @@ def process_medwood_supplier_excel(file):
     return {
         "status": "completed",
         "entity": "supplier",
+        "total": len(rows),
+        "results": results[:10]
+    }
+
+
+def process_supplier_performance_json(body):
+
+    raw = body.get("data", {})
+
+    canonical = harmonize_supplier_performance(raw)
+    validated = validate_supplier_performance(canonical)
+
+    result = update_supplier_performance(validated)
+
+    return {
+        "status": "success",
+        "entity": "supplier_performance",
+        "canonical": canonical,
+        "blueprint": result
+    }
+
+def process_supplier_performance_excel(file):
+
+    import pandas as pd
+
+    df = pd.read_excel(file.file)
+    rows = df.to_dict(orient="records")
+
+    results = []
+
+    for i, row in enumerate(rows):
+        try:
+            canonical = harmonize_supplier_performance(row)
+            validated = validate_supplier_performance(canonical)
+
+            update_supplier_performance(validated)
+
+            results.append({
+                "row": i,
+                "status": "success",
+                "id": validated["supplierId"]
+            })
+
+        except Exception as e:
+            results.append({
+                "row": i,
+                "status": "error",
+                "error": str(e)
+            })
+
+    return {
+        "status": "completed",
+        "entity": "supplier_performance",
         "total": len(rows),
         "results": results[:10]
     }
