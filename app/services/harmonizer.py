@@ -31,3 +31,21 @@ def harmonize_supplier_performance(row):
         "currentEvaluation": row.get("Evaluación"),
         "previousEvaluation": row.get("Evaluación actual")
     }
+
+def normalize_id(value):
+    if value is None:
+        return None
+    return str(value).strip()
+
+
+def harmonize_medwood_station(row):
+
+    name = row.get("CENTROS DE TRABAJO")
+
+    return {
+        "stationId": normalize_id(name),
+        "stationName": name,
+        "capacityHoursPerDay": row.get("Capacidad horas día"),
+        "machineCount": row.get("Cantidad"),
+        "description": f"Machines: {row.get('Cantidad')}"
+    }
