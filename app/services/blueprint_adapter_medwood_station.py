@@ -28,10 +28,9 @@ def load_stations():
     return STATION_CACHE
 
 
-def station_exists(station_name):
+def station_exists(station_id):
     cache = load_stations()
-    return station_name in cache
-
+    return station_id in cache
 
 # -----------------------------
 # API CALLS
