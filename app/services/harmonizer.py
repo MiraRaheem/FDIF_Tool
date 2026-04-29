@@ -6,6 +6,19 @@ def to_float(v):
     except Exception:
         return None
 
+def normalize_id(value):
+    if value is None:
+        return None
+    return (
+        str(value)
+        .strip()
+        .replace(" ", "_")
+        .replace("/", "_")
+        .replace("\\", "_")
+        .replace("(", "")
+        .replace(")", "")
+    )
+
 def harmonize_medwood_supplier(row):
 
     return {
@@ -31,11 +44,6 @@ def harmonize_supplier_performance(row):
         "currentEvaluation": row.get("Evaluación"),
         "previousEvaluation": row.get("Evaluación actual")
     }
-
-def normalize_id(value):
-    if value is None:
-        return None
-    return str(value).strip()
 
 
 def harmonize_medwood_station(row):
