@@ -5,6 +5,30 @@ session = requests.Session()
 
 
 # -----------------------------
+# HELPERS
+# -----------------------------
+def normalize_id(value):
+    if value is None:
+        return None
+    return (
+        str(value)
+        .strip()
+        .replace(" ", "_")
+        .replace("/", "_")
+        .replace("\\", "_")
+        .replace("(", "")
+        .replace(")", "")
+    )
+
+
+def safe_json(response):
+    try:
+        return response.json()
+    except Exception:
+        return {"error": "Invalid JSON response", "status_code": response.status_code}
+
+
+# -----------------------------
 # CACHE
 # -----------------------------
 STATION_CACHE = None
@@ -17,13 +41,13 @@ def load_stations():
         STATION_CACHE = set()
 
         r = session.get(f"{BASE_URL}/api/Station")
-        instances = r.json().get("instances", [])
+        data = safe_json(r)
+
+        instances = data.get("instances", [])
 
         for s in instances:
-            if isinstance(s, str):
+            if isinstance(s, str) and s:
                 STATION_CACHE.add(s)
-            elif isinstance(s, dict):
-                STATION_CACHE.add(s.get("stationName"))
 
     return STATION_CACHE
 
@@ -32,27 +56,44 @@ def station_exists(station_id):
     cache = load_stations()
     return station_id in cache
 
-# -----------------------------
-# API CALLS
-# -----------------------------
 
+def add_to_cache(station_id):
+    global STATION_CACHE
+    if STATION_CACHE is not None:
+        STATION_CACHE.add(station_id)
+
+
+# -----------------------------
+# API CALLS (WITH DEBUG)
+# -----------------------------
 def create_instance(payload):
     url = f"{BASE_URL}/api/Station"
-    return session.post(url, json=payload).json()
+    r = session.post(url, json=payload)
+
+    if r.status_code not in [200, 201]:
+        print("❌ CREATE FAILED:", r.status_code, r.text)
+
+    return safe_json(r)
 
 
 def update_instance(station_id, payload):
     url = f"{BASE_URL}/api/Station/{station_id}"
-    return session.put(url, json=payload).json()
+    r = session.put(url, json=payload)
+
+    if r.status_code not in [200, 201]:
+        print("❌ UPDATE FAILED:", r.status_code, r.text)
+
+    return safe_json(r)
 
 
 # -----------------------------
 # MAIN FUNCTION
 # -----------------------------
-
 def create_or_update_station(canonical):
 
-    station_id = f"Station_{canonical['stationId']}"
+    # 🔥 ALWAYS sanitize ID
+    clean_id = normalize_id(canonical["stationId"])
+    station_id = f"Station_{clean_id}"
 
     payload = {
         "dataProperties": [
@@ -62,18 +103,29 @@ def create_or_update_station(canonical):
         ]
     }
 
-    if station_exists(canonical["stationName"]):
-        update_instance(station_id, payload)
+    # -----------------------------
+    # CREATE OR UPDATE
+    # -----------------------------
+    if station_exists(station_id):
+
+        result = update_instance(station_id, payload)
         status = "updated"
+
     else:
-        create_instance({
+
+        result = create_instance({
             "individualName": station_id,
             **payload,
             "objectProperties": []
         })
+
         status = "created"
+
+        # ✅ update cache immediately
+        add_to_cache(station_id)
 
     return {
         "status": status,
-        "stationId": station_id
+        "stationId": station_id,
+        "api_response": result  # 🔥 helps debugging
     }
