@@ -20,7 +20,7 @@ def process_medwood_supplier_json(body):
 
     canonical = harmonize_medwood_supplier(raw)
     validated = validate_supplier(canonical)
-    result = create_supplier_instance(validated)
+    result = create_or_update_supplier(validated)
 
     return {
         "status": "success",
@@ -41,7 +41,7 @@ def process_medwood_supplier_excel(file):
         try:
             canonical = harmonize_medwood_supplier(row)
             validated = validate_supplier(canonical)
-            create_supplier_instance(validated)
+            create_or_update_supplier(validated)
 
             results.append({
                 "row": i,
