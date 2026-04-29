@@ -25,3 +25,14 @@ def validate_supplier_performance(data):
         raise ValueError("supplierId is required")
 
     return data
+
+
+def validate_station(data):
+
+    if not data.get("stationId"):
+        raise ValueError("Missing stationId")
+
+    if data.get("capacityHoursPerDay") is None:
+        raise ValueError("Missing capacityHoursPerDay")
+
+    return data
