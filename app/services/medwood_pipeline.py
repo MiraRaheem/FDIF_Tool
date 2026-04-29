@@ -9,9 +9,9 @@ from app.services.validator import (
     validate_supplier_performance
 )
 
-from app.services.blueprint_adapter import (
+from app.services.blueprint_adapter_medwood import (
     create_supplier_instance,
-    update_supplier_performance   # 👈 you will create this
+    update_supplier_performance
 )
 
 def process_medwood_supplier_json(body):
