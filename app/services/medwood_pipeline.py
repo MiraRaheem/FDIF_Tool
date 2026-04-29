@@ -10,7 +10,7 @@ from app.services.validator import (
 )
 
 from app.services.blueprint_adapter_medwood import (
-    create_supplier_instance,
+    create_or_update_supplier,
     update_supplier_performance
 )
 
