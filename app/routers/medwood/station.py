@@ -1,7 +1,7 @@
 from fastapi import APIRouter, UploadFile, File, HTTPException
 from typing import Dict, Any
 
-from app.services.medwood_station_pipeline import (
+from app.services.medwood_pipeline import (
     process_station_json,
     process_station_excel
 )
