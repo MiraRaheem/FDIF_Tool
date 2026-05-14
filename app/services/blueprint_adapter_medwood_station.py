@@ -94,7 +94,7 @@ def create_or_update_station(canonical):
     clean_id = normalize_id(canonical["stationId"])
     station_id = f"Station_{clean_id}"
 
-    factory_id = "Factory_F001"
+    factory_individual = "MEDWOOD_Factory"
 
     # -----------------------------
     # DATA PROPERTIES
@@ -113,7 +113,7 @@ def create_or_update_station(canonical):
         "objectProperties": [
             {
                 "property": "stationLocatedInFactory",
-                "value": factory_id
+                "value": factory_individual
             }
         ]
     }
@@ -150,7 +150,7 @@ def create_or_update_station(canonical):
     }
 
     factory_response = session.put(
-        f"{BASE_URL}/api/Factory/{factory_id}",
+        f"{BASE_URL}/api/Factory/{factory_individual}",
         json=factory_payload
     )
 
