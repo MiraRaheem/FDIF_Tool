@@ -90,3 +90,31 @@ def harmonize_medwood_material(row):
             or row.get("Supplier")
         ).strip()
     }
+
+def clean_price(value):
+
+    if value is None:
+        return 0
+
+    value = (
+        str(value)
+        .replace("€", "")
+        .replace(",", ".")
+        .strip()
+    )
+
+    try:
+        return float(value)
+
+    except:
+        return 0
+
+
+def harmonize_component(row):
+
+    return {
+        "componentID": str(row.get("componentID")).strip(),
+        "componentName": str(row.get("componentName")).strip(),
+        "hasUnitCostEuro": clean_price(row.get("hasUnitCostEuro")),
+        "componentWeight": float(row.get("componentWeight", 0))
+    }
