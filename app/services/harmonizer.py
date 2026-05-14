@@ -62,11 +62,31 @@ def harmonize_medwood_station(row):
 def harmonize_medwood_material(row):
 
     return {
-        "materialId": str(row.get("Material ID")).strip(),
-        "materialName": row.get("Material Name"),
-        "materialType": row.get("Tipo de material"),
-        "materialWeight": row.get("Net Weight"),
-        "materialFamily": row.get("materialFamily"),
-        "materialSubfamily": row.get("materialSubfamily"),
-        "supplierId": str(row.get("Supplier")).strip()
+
+        "materialId": str(
+            row.get("materialId") or row.get("Material ID")
+        ).strip(),
+
+        "materialName":
+            row.get("materialName")
+            or row.get("Material Name"),
+
+        "materialType":
+            row.get("materialType")
+            or row.get("Tipo de material"),
+
+        "materialWeight":
+            row.get("materialWeight")
+            or row.get("Net Weight"),
+
+        "materialFamily":
+            row.get("materialFamily"),
+
+        "materialSubfamily":
+            row.get("materialSubfamily"),
+
+        "supplierId": str(
+            row.get("supplierId")
+            or row.get("Supplier")
+        ).strip()
     }
