@@ -91,20 +91,35 @@ def update_instance(station_id, payload):
 # -----------------------------
 def create_or_update_station(canonical):
 
-    # 🔥 ALWAYS sanitize ID
     clean_id = normalize_id(canonical["stationId"])
     station_id = f"Station_{clean_id}"
 
+    factory_id = "Factory_F001"
+
+    # -----------------------------
+    # DATA PROPERTIES
+    # -----------------------------
     payload = {
         "dataProperties": [
+            {"property": "stationID", "value": canonical["stationId"]},
             {"property": "stationName", "value": canonical["stationName"]},
             {"property": "maxCapacity", "value": canonical["capacityHoursPerDay"]},
             {"property": "stationDescription", "value": canonical["description"]}
+        ],
+
+        # -----------------------------
+        # OBJECT PROPERTIES
+        # -----------------------------
+        "objectProperties": [
+            {
+                "property": "stationLocatedInFactory",
+                "value": factory_id
+            }
         ]
     }
 
     # -----------------------------
-    # CREATE OR UPDATE
+    # CREATE OR UPDATE STATION
     # -----------------------------
     if station_exists(station_id):
 
@@ -115,17 +130,33 @@ def create_or_update_station(canonical):
 
         result = create_instance({
             "individualName": station_id,
-            **payload,
-            "objectProperties": []
+            **payload
         })
 
         status = "created"
 
-        # ✅ update cache immediately
         add_to_cache(station_id)
+
+    # -----------------------------
+    # UPDATE FACTORY INVERSE RELATION
+    # -----------------------------
+    factory_payload = {
+        "objectProperties": [
+            {
+                "property": "factoryHasStation",
+                "value": station_id
+            }
+        ]
+    }
+
+    factory_response = session.put(
+        f"{BASE_URL}/api/Factory/{factory_id}",
+        json=factory_payload
+    )
 
     return {
         "status": status,
         "stationId": station_id,
-        "api_response": result  # 🔥 helps debugging
+        "station_response": result,
+        "factory_response": safe_json(factory_response)
     }
