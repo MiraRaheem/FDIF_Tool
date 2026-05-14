@@ -9,7 +9,7 @@ from app.routers.ontology_bootstrap import router as ontology_router
 from app.routers.cep_data_router import router as cep_data_router
 from app.routers.budatec.item import router as item_router
 from app.routers.medwood.station import router as medwood_station_router
-
+from app.routers.medwood.material import router as medwood_material_router
 
 
 
@@ -28,7 +28,7 @@ app.include_router(item_router)
 # Medwood
 app.include_router(medwood_supplier_router)
 app.include_router(medwood_station_router)
-
+app.include_router(medwood_material_router)
 # CEP (Melito + future real-time ingestion)
 app.include_router(cep_router)  # ✅ NEW
 app.include_router(cep_data_router)
