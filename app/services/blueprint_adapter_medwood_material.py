@@ -70,6 +70,9 @@ def create_instance(payload):
         json=payload
     )
 
+    print("CREATE MATERIAL STATUS:", r.status_code)
+    print("CREATE MATERIAL RESPONSE:", r.text)
+
     return safe_json(r)
 
 
@@ -80,8 +83,10 @@ def update_instance(material_id, payload):
         json=payload
     )
 
-    return safe_json(r)
+    print("UPDATE MATERIAL STATUS:", r.status_code)
+    print("UPDATE MATERIAL RESPONSE:", r.text)
 
+    return safe_json(r)
 
 # -----------------------------
 # MAIN
