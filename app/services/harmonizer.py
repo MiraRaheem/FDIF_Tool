@@ -58,3 +58,15 @@ def harmonize_medwood_station(row):
         "stationLocatedInFactory":row.get("stationLocatedInFactory"),
         "description": f"Machines: {row.get('Cantidad')}"
     }
+
+def harmonize_medwood_material(row):
+
+    return {
+        "materialId": str(row.get("Material ID")).strip(),
+        "materialName": row.get("Material Name"),
+        "materialType": row.get("Tipo de material"),
+        "materialWeight": row.get("Net Weight"),
+        "materialFamily": row.get("materialFamily"),
+        "materialSubfamily": row.get("materialSubfamily"),
+        "supplierId": str(row.get("Supplier")).strip()
+    }
