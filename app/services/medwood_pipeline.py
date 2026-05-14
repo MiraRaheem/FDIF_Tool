@@ -13,7 +13,12 @@ from app.services.blueprint_adapter_medwood import (
     create_or_update_supplier,
     update_supplier_performance
 )
+from app.services.harmonizer import harmonize_medwood_material
+from app.services.validator import validate_material
 
+from app.services.blueprint_adapter_medwood_material import (
+    create_or_update_material
+)
 def process_medwood_supplier_json(body):
 
     raw = body.get("data", {})
@@ -173,6 +178,63 @@ def process_station_excel(file):
     return {
         "status": "completed",
         "entity": "station",
+        "total": len(rows),
+        "results": results[:10]
+    }
+
+def process_material_json(body):
+
+    raw = body.get("data", {})
+
+    canonical = harmonize_medwood_material(raw)
+
+    validated = validate_material(canonical)
+
+    result = create_or_update_material(validated)
+
+    return {
+        "status": "success",
+        "entity": "material",
+        "canonical": canonical,
+        "blueprint": result
+    }
+
+
+def process_material_excel(file):
+
+    df = pd.read_excel(file.file)
+
+    rows = df.to_dict(orient="records")
+
+    results = []
+
+    for i, row in enumerate(rows):
+
+        try:
+
+            canonical = harmonize_medwood_material(row)
+
+            validated = validate_material(canonical)
+
+            create_or_update_material(validated)
+
+            results.append({
+                "row": i,
+                "status": "success",
+                "id": canonical["materialId"]
+            })
+
+        except Exception as e:
+
+            results.append({
+                "row": i,
+                "status": "error",
+                "error": str(e)
+            })
+
+    return {
+        "status": "completed",
+        "entity": "material",
         "total": len(rows),
         "results": results[:10]
     }
