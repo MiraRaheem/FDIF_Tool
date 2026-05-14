@@ -19,6 +19,12 @@ from app.services.validator import validate_material
 from app.services.blueprint_adapter_medwood_material import (
     create_or_update_material
 )
+
+from app.services.harmonizer import harmonize_component
+
+from app.services.blueprint_adapter_medwood_component import (
+    create_or_update_component
+)
 def process_medwood_supplier_json(body):
 
     raw = body.get("data", {})
@@ -237,4 +243,51 @@ def process_material_excel(file):
         "entity": "material",
         "total": len(rows),
         "results": results[:10]
+    }
+
+def process_component_json(payload):
+
+    canonical = harmonize_component(payload)
+
+    blueprint = create_or_update_component(canonical)
+
+    return {
+        "status": "success",
+        "entity": "component",
+        "canonical": canonical,
+        "blueprint": blueprint
+    }
+
+
+def process_component_excel(df):
+
+    results = []
+
+    for index, row in df.iterrows():
+
+        try:
+
+            canonical = harmonize_component(row)
+
+            blueprint = create_or_update_component(canonical)
+
+            results.append({
+                "row": index,
+                "status": "success",
+                "componentID": canonical["componentID"]
+            })
+
+        except Exception as e:
+
+            results.append({
+                "row": index,
+                "status": "error",
+                "error": str(e)
+            })
+
+    return {
+        "status": "completed",
+        "entity": "component",
+        "total": len(results),
+        "results": results
     }
