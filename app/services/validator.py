@@ -36,3 +36,13 @@ def validate_station(data):
         raise ValueError("Missing capacityHoursPerDay")
 
     return data
+
+def validate_material(data):
+
+    if not data.get("materialId"):
+        raise ValueError("materialId is required")
+
+    if not data.get("materialName"):
+        raise ValueError("materialName is required")
+
+    return data
