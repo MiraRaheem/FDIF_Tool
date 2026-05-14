@@ -55,5 +55,6 @@ def harmonize_medwood_station(row):
         "stationName": name,
         "capacityHoursPerDay": row.get("Capacidad horas día"),
         "machineCount": row.get("Cantidad"),
+        "stationLocatedInFactory":row.get("stationLocatedInFactory"),
         "description": f"Machines: {row.get('Cantidad')}"
     }
