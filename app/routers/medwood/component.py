@@ -2,7 +2,7 @@ from fastapi import APIRouter, UploadFile, File
 import pandas as pd
 import json
 
-from app.services.medwood_component_pipeline import (
+from app.services.medwood_pipeline import (
     process_component_json,
     process_component_excel
 )
