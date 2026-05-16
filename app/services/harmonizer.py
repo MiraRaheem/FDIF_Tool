@@ -141,3 +141,13 @@ def harmonize_medwood_product_type(row):
             row.get("Peso neto por unidad")
         )
     }
+def harmonize_bom(df):
+
+    first_row = df.iloc[0]
+
+    return {
+        "bomId": str(first_row["Artículo/Recurso"]).strip(),
+        "productName": first_row["Descripción"],
+        "version": "v1",
+        "note": "Imported from Medwood ERP"
+    }
