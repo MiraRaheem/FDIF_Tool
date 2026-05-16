@@ -11,7 +11,9 @@ from app.routers.budatec.item import router as item_router
 from app.routers.medwood.station import router as medwood_station_router
 from app.routers.medwood.material import router as medwood_material_router
 from app.routers.medwood.component import router as medwood_component_router
-
+from app.routers.medwood.product_type import (
+    router as medwood_product_type_router
+)
 
 
 app = FastAPI(
@@ -31,6 +33,7 @@ app.include_router(medwood_supplier_router)
 app.include_router(medwood_station_router)
 app.include_router(medwood_material_router)
 app.include_router(medwood_component_router)
+app.include_router(medwood_product_type_router)
 # CEP (Melito + future real-time ingestion)
 app.include_router(cep_router)  # ✅ NEW
 app.include_router(cep_data_router)
