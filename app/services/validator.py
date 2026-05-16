@@ -46,3 +46,13 @@ def validate_material(data):
         raise ValueError("materialName is required")
 
     return data
+
+def validate_product_type(data):
+
+    if not data.get("productId"):
+        raise ValueError("Missing productId")
+
+    if not data.get("productName"):
+        raise ValueError("Missing productName")
+
+    return data
