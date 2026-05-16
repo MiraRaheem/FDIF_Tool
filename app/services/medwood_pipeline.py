@@ -36,6 +36,16 @@ from app.services.validator import (
 from app.services.blueprint_adapter_medwood_product import (
     create_or_update_product_type
 )
+from app.services.harmonizer import harmonize_bom
+
+from app.services.blueprint_adapter_medwood_bom import (
+    create_or_update_bom,
+    link_bom_to_product,
+    link_material_to_bom,
+    link_component_to_bom
+)
+
+
 def process_medwood_supplier_json(body):
 
     raw = body.get("data", {})
@@ -318,4 +328,60 @@ def process_product_type_json(body):
         "entity": "product_type",
         "canonical": canonical,
         "blueprint": result
+    }
+
+
+def process_bom_excel(file):
+
+    df = pd.read_excel(file.file)
+
+    # --------------------------------
+    # CREATE BOM
+    # --------------------------------
+    canonical = harmonize_bom(df)
+
+    bom_id = create_or_update_bom(canonical)
+
+    # --------------------------------
+    # LINK PRODUCT
+    # --------------------------------
+    product_id = canonical["bomId"]
+
+    link_bom_to_product(product_id, bom_id)
+
+    material_count = 0
+    component_count = 0
+
+    # --------------------------------
+    # LOOP ROWS
+    # --------------------------------
+    rows = df.to_dict(orient="records")
+
+    for row in rows:
+
+        tipo = str(row.get("TIPO", "")).strip()
+
+        entity_id = str(row.get("Artículo/Recurso")).strip()
+
+        # --------------------------------
+        # MATERIALS
+        # --------------------------------
+        if tipo == "Materia prima":
+
+            link_material_to_bom(entity_id, bom_id)
+            material_count += 1
+
+        # --------------------------------
+        # COMPONENTS
+        # --------------------------------
+        elif tipo == "Semielaborado":
+
+            link_component_to_bom(entity_id, bom_id)
+            component_count += 1
+
+    return {
+        "status": "completed",
+        "bom": bom_id,
+        "materialsLinked": material_count,
+        "componentsLinked": component_count
     }
