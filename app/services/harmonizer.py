@@ -118,3 +118,26 @@ def harmonize_component(row):
         "hasUnitCostEuro": clean_price(row.get("hasUnitCostEuro")),
         "componentWeight": float(row.get("componentWeight", 0))
     }
+
+def harmonize_medwood_product_type(row):
+
+    return {
+        "productId": row.get("Artículo/Recurso"),
+        "productName": row.get("Descripción"),
+        "productFamily": row.get("TIPO"),
+        "productCost": to_float(
+            str(row.get("Precio de coste total por unidad", ""))
+            .replace("€", "")
+            .replace(",", ".")
+            .strip()
+        ),
+        "productPrice": to_float(
+            str(row.get("Precio de ventas total por unidad", ""))
+            .replace("€", "")
+            .replace(",", ".")
+            .strip()
+        ),
+        "productWeight": to_float(
+            row.get("Peso neto por unidad")
+        )
+    }
