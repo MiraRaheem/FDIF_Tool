@@ -25,6 +25,17 @@ from app.services.harmonizer import harmonize_component
 from app.services.blueprint_adapter_medwood_component import (
     create_or_update_component
 )
+from app.services.harmonizer import (
+    harmonize_medwood_product_type
+)
+
+from app.services.validator import (
+    validate_product_type
+)
+
+from app.services.blueprint_adapter_medwood_product import (
+    create_or_update_product_type
+)
 def process_medwood_supplier_json(body):
 
     raw = body.get("data", {})
@@ -290,4 +301,21 @@ def process_component_excel(df):
         "entity": "component",
         "total": len(results),
         "results": results
+    }
+
+def process_product_type_json(body):
+
+    raw = body.get("data", {})
+
+    canonical = harmonize_medwood_product_type(raw)
+
+    validated = validate_product_type(canonical)
+
+    result = create_or_update_product_type(validated)
+
+    return {
+        "status": "success",
+        "entity": "product_type",
+        "canonical": canonical,
+        "blueprint": result
     }
