@@ -30,10 +30,15 @@ def ingest_melito_readings(raw: dict):
     canonical = harmonize_observations(raw)
     validate_observations(canonical)
     result = map_observations(canonical)
-
+    """
     return {
         "status": "success",
         "instances_created": result
+    }
+    """
+    return {
+        "status": "temporarily_disabled",
+        "message": "Ingestion temporarily paused during infrastructure upgrade."
     }
 
 @router.post("/observations/argon", summary="Ingest Argon Observations")
@@ -43,9 +48,15 @@ def ingest_argon_observations(raw: dict):
     validate_observations(canonical)
     result = map_observations(canonical)
 
+    """
     return {
         "status": "success",
         "instances_created": result
+    }
+    """
+    return {
+        "status": "temporarily_disabled",
+        "message": "Ingestion temporarily paused during infrastructure upgrade."
     }
 
 @router.post("/events/melito", summary="Ingest Melito Events")
@@ -55,9 +66,15 @@ def ingest_melito_events(raw: dict):
     validate_events(canonical)
     result = map_events(canonical)
 
+    """
     return {
         "status": "success",
-        "event_created": result
+        "instances_created": result
+    }
+    """
+    return {
+        "status": "temporarily_disabled",
+        "message": "Ingestion temporarily paused during infrastructure upgrade."
     }
 
 @router.post("/events/argon-prediction", summary="Ingest Argon Predictive Events")
@@ -67,7 +84,13 @@ def ingest_argon_prediction(raw: dict):
     validate_argon_prediction(canonical)
     result = map_argon_prediction(canonical)
 
+    """
     return {
         "status": "success",
-        "event_created": result
+        "instances_created": result
+    }
+    """
+    return {
+        "status": "temporarily_disabled",
+        "message": "Ingestion temporarily paused during infrastructure upgrade."
     }
