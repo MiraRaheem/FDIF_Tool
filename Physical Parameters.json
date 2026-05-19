@@ -261,7 +261,7 @@
       },
       {
         "property": "comparisonOperator",
-        "value": "<="
+        "value": "<"
       },
       {
         "property": "unitOfMeasurement",
