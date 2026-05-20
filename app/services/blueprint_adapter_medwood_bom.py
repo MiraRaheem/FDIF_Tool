@@ -117,7 +117,7 @@ def link_bom_to_product(product_id, bom_id):
 # LINK MANY MATERIALS TO BOM
 # =========================================================
 
-def link_materials_to_bom(material_ids, bom_id):
+def link_material_to_bom(material_ids, bom_id):
 
     bom_properties = []
 
@@ -155,7 +155,7 @@ def link_materials_to_bom(material_ids, bom_id):
 # LINK MANY COMPONENTS TO BOM
 # =========================================================
 
-def link_components_to_bom(component_ids, bom_id):
+def link_component_to_bom(component_ids, bom_id):
 
     bom_properties = []
 
