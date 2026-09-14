@@ -1,5 +1,6 @@
 import requests
-
+import pandas as pd
+import re
 BASE_URL = "https://narrate-webapp-tcxs.onrender.com"
 session = requests.Session()
 
