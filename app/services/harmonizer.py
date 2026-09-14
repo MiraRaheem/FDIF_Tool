@@ -8,18 +8,24 @@ def to_float(v):
         return None
 
 def normalize_id(value):
-    if value is None:
-        return None
-    return (
-        str(value)
-        .strip()
-        .replace(" ", "_")
-        .replace("/", "_")
-        .replace("\\", "_")
-        .replace("(", "")
-        .replace(")", "")
-    )
 
+    if value is None or pd.isna(value):
+        return None
+
+    value = str(value).strip()
+
+    # Replace every character that is unsafe for an RDF individual
+    # with an underscore.
+    value = re.sub(r'[^A-Za-z0-9_-]+', '_', value)
+
+    # Remove duplicate underscores
+    value = re.sub(r'_+', '_', value)
+
+    # Remove underscores from beginning/end
+    value = value.strip('_')
+
+    return value
+    
 def harmonize_medwood_supplier(row):
 
     return {
