@@ -1,4 +1,5 @@
 from typing import Dict, Any
+import pandas as pd
 
 def to_float(v):
     try:
@@ -50,13 +51,32 @@ def harmonize_medwood_station(row):
 
     name = row.get("CENTROS DE TRABAJO")
 
+    if pd.isna(name):
+        name = None
+    else:
+        name = str(name).strip()
+
+    quantity = row.get("Cantidad")
+
+    if pd.isna(quantity):
+        quantity = None
+
+    capacity = row.get("Capacidad horas día")
+
+    if pd.isna(capacity):
+        capacity = None
+
     return {
         "stationId": normalize_id(name),
         "stationName": name,
-        "capacityHoursPerDay": row.get("Capacidad horas día"),
-        "machineCount": row.get("Cantidad"),
-        "stationLocatedInFactory":row.get("stationLocatedInFactory"),
-        "description": f"Machines: {row.get('Cantidad')}"
+        "capacityHoursPerDay": capacity,
+        "machineCount": quantity,
+        "stationLocatedInFactory": row.get("stationLocatedInFactory"),
+        "description": (
+            f"Machines: {quantity}"
+            if quantity is not None
+            else None
+        )
     }
 
 def harmonize_medwood_material(row):
