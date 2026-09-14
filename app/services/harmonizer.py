@@ -1,5 +1,6 @@
 from typing import Dict, Any
 import pandas as pd
+import re
 
 def to_float(v):
     try:
