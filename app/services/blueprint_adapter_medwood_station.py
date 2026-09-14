@@ -40,29 +40,56 @@ def load_stations():
     if STATION_CACHE is None:
         STATION_CACHE = set()
 
-        r = session.get(f"{BASE_URL}/api/Station")
-        data = safe_json(r)
+        r = session.get(
+            f"{BASE_URL}/api/Station",
+            timeout=60
+        )
 
+        if r.status_code != 200:
+            raise RuntimeError(
+                f"Failed to load stations. "
+                f"Status={r.status_code}, Response={r.text}"
+            )
+
+        data = safe_json(r)
         instances = data.get("instances", [])
 
-        for s in instances:
-            if isinstance(s, str) and s:
-                STATION_CACHE.add(s)
+        for station in instances:
+
+            # API may return instance names directly
+            if isinstance(station, str):
+                if station:
+                    STATION_CACHE.add(station)
+
+            # API may return dictionaries
+            elif isinstance(station, dict):
+
+                individual_name = station.get("individualName")
+
+                if individual_name:
+                    STATION_CACHE.add(individual_name)
+
+                station_id = station.get("stationID")
+
+                if station_id:
+                    STATION_CACHE.add(
+                        f"Station_{normalize_id(station_id)}"
+                    )
 
     return STATION_CACHE
 
 
 def station_exists(station_id):
-    cache = load_stations()
-    return station_id in cache
+    return station_id in load_stations()
 
 
 def add_to_cache(station_id):
     global STATION_CACHE
-    if STATION_CACHE is not None:
-        STATION_CACHE.add(station_id)
 
+    if STATION_CACHE is None:
+        STATION_CACHE = set()
 
+    STATION_CACHE.add(station_id)
 # -----------------------------
 # API CALLS (WITH DEBUG)
 # -----------------------------
@@ -74,18 +101,20 @@ def create_instance(payload):
 
         print("CREATE STATION")
         print("URL:", url)
+        print("Payload:", payload)
         print("Status:", r.status_code)
         print("Response:", r.text)
 
         if r.status_code not in [200, 201]:
-            print("❌ CREATE FAILED:", r.status_code, r.text)
-            return None
+            raise RuntimeError(
+                f"Failed to create station. "
+                f"Status={r.status_code}, Response={r.text}"
+            )
 
         return safe_json(r)
 
     except requests.RequestException as e:
-        print("❌ CREATE REQUEST FAILED:", e)
-        return None
+        raise RuntimeError(f"Create station request failed: {e}")
 
 def update_instance(station_id, payload):
     url = f"{BASE_URL}/api/Station/{station_id}"
@@ -95,18 +124,21 @@ def update_instance(station_id, payload):
 
         print("UPDATE STATION")
         print("URL:", url)
+        print("Payload:", payload)
         print("Status:", r.status_code)
         print("Response:", r.text)
 
         if r.status_code not in [200, 201]:
-            print("❌ UPDATE FAILED:", r.status_code, r.text)
-            return None
+            raise RuntimeError(
+                f"Failed to update station. "
+                f"Status={r.status_code}, Response={r.text}"
+            )
 
         return safe_json(r)
 
     except requests.RequestException as e:
-        print("❌ UPDATE REQUEST FAILED:", e)
-        return None
+        raise RuntimeError(f"Update station request failed: {e}")
+
 
 def create_or_update_station(canonical):
 
