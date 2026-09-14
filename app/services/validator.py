@@ -32,6 +32,9 @@ def validate_station(data):
     if not data.get("stationId"):
         raise ValueError("Missing stationId")
 
+    if not data.get("stationName"):
+        raise ValueError("Missing stationName")
+
     if data.get("capacityHoursPerDay") is None:
         raise ValueError("Missing capacityHoursPerDay")
 
