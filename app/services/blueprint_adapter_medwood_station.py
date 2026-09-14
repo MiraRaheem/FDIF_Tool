@@ -94,10 +94,15 @@ def add_to_cache(station_id):
 # API CALLS (WITH DEBUG)
 # -----------------------------
 def create_instance(payload):
+
     url = f"{BASE_URL}/api/Station"
 
     try:
-        r = session.post(url, json=payload, timeout=60)
+        r = session.post(
+            url,
+            json=payload,
+            timeout=60
+        )
 
         print("CREATE STATION")
         print("URL:", url)
@@ -108,37 +113,26 @@ def create_instance(payload):
         if r.status_code not in [200, 201]:
             raise RuntimeError(
                 f"Failed to create station. "
-                f"Status={r.status_code}, Response={r.text}"
+                f"Status={r.status_code}, "
+                f"Response={r.text}"
             )
 
-        return safe_json(r)
+        result = safe_json(r)
+
+        # Narrate can return HTTP 200 for an application-level error
+        if isinstance(result, dict):
+            if result.get("status") == "error":
+                raise RuntimeError(
+                    f"Narrate rejected station creation: "
+                    f"{result.get('message', result)}"
+                )
+
+        return result
 
     except requests.RequestException as e:
-        raise RuntimeError(f"Create station request failed: {e}")
-
-def update_instance(station_id, payload):
-    url = f"{BASE_URL}/api/Station/{station_id}"
-
-    try:
-        r = session.put(url, json=payload, timeout=60)
-
-        print("UPDATE STATION")
-        print("URL:", url)
-        print("Payload:", payload)
-        print("Status:", r.status_code)
-        print("Response:", r.text)
-
-        if r.status_code not in [200, 201]:
-            raise RuntimeError(
-                f"Failed to update station. "
-                f"Status={r.status_code}, Response={r.text}"
-            )
-
-        return safe_json(r)
-
-    except requests.RequestException as e:
-        raise RuntimeError(f"Update station request failed: {e}")
-
+        raise RuntimeError(
+            f"Create station request failed: {e}"
+        )
 
 def create_or_update_station(canonical):
 
