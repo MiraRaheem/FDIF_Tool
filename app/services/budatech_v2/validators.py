@@ -38,3 +38,36 @@ def validate_customer(customer: dict[str, Any]) -> list[str]:
             )
 
     return errors
+
+
+
+def validate_supplier(supplier: dict[str, Any]) -> list[str]:
+    """
+    Validate a canonical Supplier record.
+
+    Supplier ID and name are required.
+    Supplier type is preserved but is not restricted to an
+    enum that has not been confirmed in the ontology metadata.
+    """
+
+    errors: list[str] = []
+
+    for field in ("supplierId", "supplierName"):
+        value = supplier.get(field)
+
+        if not isinstance(value, str) or not value.strip():
+            errors.append(
+                f"{field} is required and must be a non-empty string."
+            )
+
+    supplier_type = supplier.get("supplierType")
+
+    if supplier_type is not None and (
+        not isinstance(supplier_type, str)
+        or not supplier_type.strip()
+    ):
+        errors.append(
+            "supplierType must be a non-empty string when provided."
+        )
+
+    return errors
