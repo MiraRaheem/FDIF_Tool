@@ -42,3 +42,19 @@ def harmonize_supplier(raw: dict) -> dict:
         "supplierType": raw.get("Supplier Type"),
     }
 
+
+def harmonize_company(raw: dict[str, Any]) -> dict[str, Any]:
+    """Map a normalized Budatech Company row to canonical FDIF fields.
+
+    The source export's ID column contains the company identifier; in the
+    supplied workbook it currently duplicates the Company name.
+    """
+    return {
+        "companyId": raw.get("ID"),
+        "companyName": raw.get("Company"),
+        "abbreviation": raw.get("Abbr"),
+        "defaultCurrency": raw.get("Default Currency"),
+        "country": raw.get("Country"),
+    }
+
+
