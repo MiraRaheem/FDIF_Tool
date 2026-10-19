@@ -41,6 +41,25 @@ def validate_customer(customer: dict[str, Any]) -> list[str]:
 
 
 
+def validate_company(company: dict[str, Any]) -> list[str]:
+    """Validate a canonical Company record before ontology ingestion."""
+    errors: list[str] = []
+
+    for field in ("companyId", "companyName"):
+        value = company.get(field)
+        if not isinstance(value, str) or not value.strip():
+            errors.append(
+                f"{field} is required and must be a non-empty string."
+            )
+
+    country = company.get("country")
+    if country is not None and (
+        not isinstance(country, str) or not country.strip()
+    ):
+        errors.append("country must be a non-empty string when provided.")
+
+    return errors
+
 def validate_supplier(supplier: dict[str, Any]) -> list[str]:
     """
     Validate a canonical Supplier record.
@@ -71,3 +90,6 @@ def validate_supplier(supplier: dict[str, Any]) -> list[str]:
         )
 
     return errors
+
+
+
