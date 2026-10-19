@@ -1,4 +1,4 @@
-
+from typing import Any
 def harmonize_customer(raw: dict) -> dict:
     """Map a normalized Budatech Customer record to canonical fields."""
 
