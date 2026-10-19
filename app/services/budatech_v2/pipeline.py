@@ -6,6 +6,7 @@ from app.services.budatech_v2.excel_reader import read_customers
 from app.services.budatech_v2.normalizer import normalize_record
 from app.services.budatech_v2.harmonizers import harmonize_customer
 from app.services.budatech_v2.validators import validate_customer
+from app.services.budatech_v2.excel_reader import read_companies
 from app.services.budatech_v2.ontology_mapper import (
     map_customer_to_ontology,
 )
