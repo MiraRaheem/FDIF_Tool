@@ -3,7 +3,7 @@ from fastapi import FastAPI
 #test
 from app.routers.budatech_v2.item import router as budatech_v2_test_router
 
-from app.routers.budatech_v2 import router as budatech_v2_router
+from app.routers.budatech_v2.item import router as budatech_v2_test_router
 
 
 from app.routers.budatec.supplier import router as supplier_router
