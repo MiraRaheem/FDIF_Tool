@@ -7,9 +7,10 @@ from fastapi import APIRouter, File, HTTPException, UploadFile
 from app.services.budatech_v2.pipeline import ingest_company_excel
 
 router = APIRouter(
-    prefix="/company",
-    tags=["Budatech v2 - Company"],
+    prefix="/fdif/budatech-v2",
+    tags=["FDIF Budatech v2"],
 )
+
 
 ALLOWED_EXTENSIONS = {".xlsx", ".xls"}
 
