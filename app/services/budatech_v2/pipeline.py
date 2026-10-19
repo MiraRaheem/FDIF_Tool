@@ -3,7 +3,7 @@ from pathlib import Path
 from typing import Any
 
 from app.services.budatech_v2.excel_reader import read_customers
-from app.services.budatech_v2.normalizer import normalize_customer
+from app.services.budatech_v2.normalizer import normalize_record
 from app.services.budatech_v2.harmonizers import harmonize_customer
 from app.services.budatech_v2.validators import validate_customer
 from app.services.budatech_v2.ontology_mapper import (
@@ -16,21 +16,14 @@ def process_customer_records(
     records: list[dict[str, Any]],
     adapter: BlueprintAdapter | None = None,
 ) -> dict[str, Any]:
-    """
-    Process Customer records through the v2 ingestion pipeline.
-
-    This function processes records individually and returns a result
-    for each record. It does not stop the whole batch when one record
-    fails validation or API insertion.
-    """
+    """Process Customer records through the Budatech v2 pipeline."""
 
     adapter = adapter or BlueprintAdapter()
-
     results = []
 
     for row_number, raw_record in enumerate(records, start=1):
         try:
-            normalized = normalize_customer(raw_record)
+            normalized = normalize_record(raw_record)
             canonical = harmonize_customer(normalized)
             errors = validate_customer(canonical)
 
@@ -44,13 +37,11 @@ def process_customer_records(
                 continue
 
             ontology_record = map_customer_to_ontology(canonical)
-
             customer_id = canonical["customerId"]
-            individual_name = f"Customer_{customer_id}"
 
             response = adapter.create_customer(
                 ontology_record,
-                individual_name,
+                f"Customer_{customer_id}",
             )
 
             results.append({
@@ -92,9 +83,4 @@ def ingest_customer_excel(
     """Read and ingest a Customer Excel export."""
 
     records = read_customers(file_path)
-
-    return process_customer_records(
-        records,
-        adapter=adapter,
-    )
-
+    return process_customer_records(records, adapter=adapter)
