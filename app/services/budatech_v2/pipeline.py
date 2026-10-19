@@ -249,3 +249,104 @@ def ingest_supplier_excel(
     records = read_suppliers(file_path)
     return process_supplier_records(records, adapter=adapter)
 
+def process_company_records(
+    records: list[dict[str, Any]],
+    adapter: BlueprintAdapter | None = None,
+) -> dict[str, Any]:
+    """Validate and ingest Company rows as LeadManufacturer instances.
+
+    Existing records are skipped; this pipeline does not update or delete
+    ontology instances. Those actions remain in the NARRATE web app.
+    """
+    adapter = adapter or BlueprintAdapter()
+    results: list[dict[str, Any]] = []
+
+    for row_number, raw_record in enumerate(records, start=1):
+        try:
+            normalized = normalize_record(raw_record)
+            canonical = harmonize_company(normalized)
+            errors = validate_company(canonical)
+
+            if errors:
+                results.append({
+                    "row": row_number,
+                    "status": "validation_error",
+                    "companyId": canonical.get("companyId"),
+                    "errors": errors,
+                })
+                continue
+
+            company_id = str(canonical["companyId"])
+            if adapter.lead_manufacturer_exists(company_id):
+                results.append({
+                    "row": row_number,
+                    "status": "duplicate",
+                    "companyId": company_id,
+                    "message": (
+                        "This LeadManufacturer ID already exists in NARRATE. "
+                        "The record was skipped. If its fields need updating, "
+                        "use the update function in the NARRATE web app."
+                    ),
+                })
+                continue
+
+            ontology_record = map_company_to_ontology(canonical)
+            individual_name = (
+                f"LeadManufacturer_{adapter._sanitize_id(company_id)}"
+            )
+            response = adapter.create_lead_manufacturer(
+                ontology_record,
+                individual_name,
+            )
+            succeeded = response.get("status") == "success"
+
+            results.append({
+                "row": row_number,
+                "companyId": company_id,
+                "status": "success" if succeeded else "error",
+                "response": response,
+            })
+
+        except Exception as exc:
+            results.append({
+                "row": row_number,
+                "status": "error",
+                "companyId": raw_record.get("ID"),
+                "message": str(exc),
+            })
+
+    duplicates = [
+        {
+            "row": result["row"],
+            "companyId": result["companyId"],
+            "message": result["message"],
+        }
+        for result in results
+        if result["status"] == "duplicate"
+    ]
+    successful = sum(result["status"] == "success" for result in results)
+    failed = sum(
+        result["status"] in {"error", "validation_error"}
+        for result in results
+    )
+
+    return {
+        "entity": "companies",
+        "ontology_class": "LeadManufacturer",
+        "total_records": len(records),
+        "successful_records": successful,
+        "duplicate_records_count": len(duplicates),
+        "failed_records": failed,
+        "duplicates": duplicates,
+        "results": results,
+    }
+
+
+def ingest_company_excel(
+    file_path: str | Path,
+    adapter: BlueprintAdapter | None = None,
+) -> dict[str, Any]:
+    """Read a Company Excel export and ingest it as LeadManufacturer."""
+    return process_company_records(read_companies(file_path), adapter=adapter)
+
+
