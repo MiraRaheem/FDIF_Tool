@@ -24,3 +24,21 @@ def harmonize_customer(raw: dict) -> dict:
         "customerName": raw.get("Customer Name"),
         "customerType": canonical_type,
     }
+
+
+
+def harmonize_supplier(raw: dict) -> dict:
+    """
+    Normalize a raw Budatech Supplier record into the
+    canonical representation used by the v2 pipeline.
+
+    Source: Supplier.xlsx
+    Ontology target: MaterialSupplier
+    """
+
+    return {
+        "supplierId": raw.get("ID"),
+        "supplierName": raw.get("Supplier Name"),
+        "supplierType": raw.get("Supplier Type"),
+    }
+
