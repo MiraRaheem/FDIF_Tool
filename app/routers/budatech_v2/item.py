@@ -3,6 +3,7 @@ from fastapi import APIRouter, UploadFile, File, HTTPException
 from typing import Literal
 
 from app.services.budatech_v2.excel_reader import read_excel_records
+from app.services.budatech_v2.normalizer import normalize_records
 
 router = APIRouter(
     prefix="/fdif/budatech-v2/test",
