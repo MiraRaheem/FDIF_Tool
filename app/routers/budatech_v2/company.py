@@ -15,7 +15,7 @@ router = APIRouter(
 ALLOWED_EXTENSIONS = {".xlsx", ".xls"}
 
 
-@router.post("/ingest")
+@router.post("/company/ingest")
 async def ingest_company(file: UploadFile = File(...)) -> dict[str, Any]:
     """Ingest Company rows from an uploaded Excel file as LeadManufacturer instances."""
     suffix = Path(file.filename or "").suffix.lower()
