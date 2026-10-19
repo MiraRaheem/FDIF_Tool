@@ -1,16 +1,26 @@
 
 def harmonize_customer(raw: dict) -> dict:
-    """
-    Map a normalized Budatech Customer record
-    to the canonical FDIF representation.
+    """Map a normalized Budatech Customer record to canonical fields."""
 
-    Source: Customer.xlsx
-    Target ontology class: Customer
-    """
+    source_type = raw.get("Customer Type")
+
+    customer_type_mapping = {
+        "Company": "OEM",
+        "Individual": "Individual",
+        "Distributor": "Distributer",
+        "Distributer": "Distributer",
+        "Retailer": "Retailer",
+        "OEM": "OEM",
+    }
+
+    canonical_type = (
+        customer_type_mapping.get(source_type)
+        if source_type is not None
+        else None
+    )
 
     return {
         "customerId": raw.get("ID"),
         "customerName": raw.get("Customer Name"),
-        "customerType": raw.get("Customer Type"),
+        "customerType": canonical_type,
     }
-
