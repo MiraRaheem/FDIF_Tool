@@ -1,33 +1,33 @@
-
 from pathlib import Path
 from typing import Any
 
-from app.services.budatech_v2.excel_reader import read_customers
-from app.services.budatech_v2.normalizer import normalize_record
-from app.services.budatech_v2.harmonizers import harmonize_customer
-from app.services.budatech_v2.validators import validate_customer
-from app.services.budatech_v2.excel_reader import read_companies
-from app.services.budatech_v2.ontology_mapper import (
-    map_customer_to_ontology,
-)
 from app.services.budatech_v2.blueprint_adapter import BlueprintAdapter
+
 from app.services.budatech_v2.excel_reader import (
+    read_companies,
     read_customers,
     read_suppliers,
 )
+
 from app.services.budatech_v2.harmonizers import (
+    harmonize_company,
     harmonize_customer,
     harmonize_supplier,
 )
-from app.services.budatech_v2.validators import (
-    validate_customer,
-    validate_supplier,
-)
+
+from app.services.budatech_v2.normalizer import normalize_record
+
 from app.services.budatech_v2.ontology_mapper import (
+    map_company_to_ontology,
     map_customer_to_ontology,
     map_supplier_to_ontology,
 )
 
+from app.services.budatech_v2.validators import (
+    validate_company,
+    validate_customer,
+    validate_supplier,
+)
 
 def process_customer_records(
     records: list[dict[str, Any]],
