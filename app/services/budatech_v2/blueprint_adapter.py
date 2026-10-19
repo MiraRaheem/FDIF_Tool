@@ -225,39 +225,41 @@ class BlueprintAdapter:
 
         return self.create_instance("Customer", payload)
 
-
-def create_supplier(
-    self,
-    ontology_record: dict[str, Any],
-    individual_name: str,
-) -> dict[str, Any]:
-    """Submit an ontology-mapped MaterialSupplier record."""
-
-    if ontology_record.get("class") != "MaterialSupplier":
-        return {
-            "status": "error",
-            "message": "Expected ontology class 'MaterialSupplier'.",
+    def create_supplier(
+        self,
+        ontology_record: dict[str, Any],
+        individual_name: str,
+    ) -> dict[str, Any]:
+        """Submit an ontology-mapped MaterialSupplier record."""
+    
+        if ontology_record.get("class") != "MaterialSupplier":
+            return {
+                "status": "error",
+                "message": "Expected ontology class 'MaterialSupplier'.",
+            }
+    
+        properties = ontology_record.get("properties")
+    
+        if not isinstance(properties, dict):
+            return {
+                "status": "error",
+                "message": "Supplier properties must be a dictionary.",
+            }
+    
+        data_properties = [
+            {"property": property_name, "value": value}
+            for property_name, value in properties.items()
+            if value is not None
+        ]
+    
+        payload = {
+            "individualName": individual_name,
+            "dataProperties": data_properties,
+            "objectProperties": [],
         }
-
-    properties = ontology_record.get("properties")
-
-    if not isinstance(properties, dict):
-        return {
-            "status": "error",
-            "message": "Supplier properties must be a dictionary.",
-        }
-
-    data_properties = [
-        {"property": property_name, "value": value}
-        for property_name, value in properties.items()
-        if value is not None
-    ]
-
-    payload = {
-        "individualName": individual_name,
-        "dataProperties": data_properties,
-        "objectProperties": [],
-    }
-
-    return self.create_instance("MaterialSupplier", payload)
-
+    
+        return self.create_instance("MaterialSupplier", payload)
+    
+    
+    
+    
