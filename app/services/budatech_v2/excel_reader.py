@@ -48,3 +48,9 @@ def read_customers(file_path: str | Path) -> list[dict[str, Any]]:
 def read_items(file_path: str | Path) -> list[dict[str, Any]]:
     return read_excel_records(file_path)
 
+
+
+
+def read_companies(file_path: str | Path) -> list[dict[str, Any]]:
+    """Read a Budatech Company Excel export."""
+    return read_excel_records(file_path)
