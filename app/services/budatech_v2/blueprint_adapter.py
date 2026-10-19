@@ -125,6 +125,58 @@ class BlueprintAdapter:
 
         return False
 
+    
+    def supplier_exists(self, supplier_id: str) -> bool:
+        """Check whether a MaterialSupplier with this ID already exists."""
+
+        url = f"{self.base_url}/api/MaterialSupplier"
+
+        try:
+            response = requests.get(url, timeout=self.timeout)
+            response.raise_for_status()
+            body = response.json()
+        except (requests.RequestException, ValueError) as exc:
+            raise RuntimeError(
+                f"Could not check whether Supplier ID "
+                f"'{supplier_id}' exists: {exc}"
+            ) from exc
+
+        instances = body.get("instances", [])
+        expected_name = f"MaterialSupplier_{self._sanitize_id(supplier_id)}"
+
+        for instance in instances:
+            if isinstance(instance, str):
+                instance_name = instance.rstrip("/").split("#")[-1]
+                instance_name = instance_name.split("/")[-1]
+
+                if instance_name == expected_name:
+                    return True
+
+            elif isinstance(instance, dict):
+                if instance.get("hasSupplierID") == supplier_id:
+                    return True
+
+                data_properties = instance.get("dataProperties", [])
+
+                if isinstance(data_properties, list):
+                    for prop in data_properties:
+                        if (
+                            isinstance(prop, dict)
+                            and prop.get("property") == "hasSupplierID"
+                            and prop.get("value") == supplier_id
+                        ):
+                            return True
+
+                elif isinstance(data_properties, dict):
+                    if data_properties.get("hasSupplierID") == supplier_id:
+                        return True
+
+                if instance.get("individualName") == expected_name:
+                    return True
+
+        return False
+
+
 
     def create_customer(
         self,
