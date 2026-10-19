@@ -12,11 +12,12 @@ from app.services.budatech_v2.ontology_mapper import (
 from app.services.budatech_v2.blueprint_adapter import BlueprintAdapter
 
 
+
 def process_customer_records(
     records: list[dict[str, Any]],
     adapter: BlueprintAdapter | None = None,
 ) -> dict[str, Any]:
-    """Process Customer records through the Budatech v2 pipeline."""
+    """Process Customer records, skipping IDs already in NARRATE."""
 
     adapter = adapter or BlueprintAdapter()
     results = []
@@ -36,22 +37,39 @@ def process_customer_records(
                 })
                 continue
 
-            ontology_record = map_customer_to_ontology(canonical)
             customer_id = canonical["customerId"]
+
+            # Check the ontology before attempting creation.
+            if adapter.customer_exists(customer_id):
+                results.append({
+                    "row": row_number,
+                    "status": "duplicate",
+                    "customerId": customer_id,
+                    "message": (
+                        "This Customer ID already exists in NARRATE. "
+                        "The record was skipped. If its fields need "
+                        "updating, use the update function in the "
+                        "NARRATE web app."
+                    ),
+                })
+                continue
+
+            ontology_record = map_customer_to_ontology(canonical)
+            individual_name = (
+                f"Customer_{adapter._sanitize_id(customer_id)}"
+            )
 
             response = adapter.create_customer(
                 ontology_record,
-                f"Customer_{customer_id}",
+                individual_name,
             )
+
+            succeeded = response.get("status") == "success"
 
             results.append({
                 "row": row_number,
                 "customerId": customer_id,
-                "status": (
-                    "success"
-                    if response.get("status") == "success"
-                    else response.get("status", "error")
-                ),
+                "status": "success" if succeeded else "error",
                 "response": response,
             })
 
@@ -59,11 +77,26 @@ def process_customer_records(
             results.append({
                 "row": row_number,
                 "status": "error",
+                "customerId": raw_record.get("ID"),
                 "message": str(exc),
             })
 
+    duplicates = [
+        {
+            "row": result["row"],
+            "customerId": result["customerId"],
+            "message": result["message"],
+        }
+        for result in results
+        if result["status"] == "duplicate"
+    ]
+
     successful = sum(
         result["status"] == "success"
+        for result in results
+    )
+    failed = sum(
+        result["status"] in {"error", "validation_error"}
         for result in results
     )
 
@@ -71,7 +104,9 @@ def process_customer_records(
         "entity": "customers",
         "total_records": len(records),
         "successful_records": successful,
-        "failed_records": len(records) - successful,
+        "duplicate_records_count": len(duplicates),
+        "failed_records": failed,
+        "duplicates": duplicates,
         "results": results,
     }
 
