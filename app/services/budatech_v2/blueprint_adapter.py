@@ -125,58 +125,6 @@ class BlueprintAdapter:
 
         return False
 
-    
-    def supplier_exists(self, supplier_id: str) -> bool:
-        """Check whether a MaterialSupplier with this ID already exists."""
-
-        url = f"{self.base_url}/api/MaterialSupplier"
-
-        try:
-            response = requests.get(url, timeout=self.timeout)
-            response.raise_for_status()
-            body = response.json()
-        except (requests.RequestException, ValueError) as exc:
-            raise RuntimeError(
-                f"Could not check whether Supplier ID "
-                f"'{supplier_id}' exists: {exc}"
-            ) from exc
-
-        instances = body.get("instances", [])
-        expected_name = f"MaterialSupplier_{self._sanitize_id(supplier_id)}"
-
-        for instance in instances:
-            if isinstance(instance, str):
-                instance_name = instance.rstrip("/").split("#")[-1]
-                instance_name = instance_name.split("/")[-1]
-
-                if instance_name == expected_name:
-                    return True
-
-            elif isinstance(instance, dict):
-                if instance.get("hasSupplierID") == supplier_id:
-                    return True
-
-                data_properties = instance.get("dataProperties", [])
-
-                if isinstance(data_properties, list):
-                    for prop in data_properties:
-                        if (
-                            isinstance(prop, dict)
-                            and prop.get("property") == "hasSupplierID"
-                            and prop.get("value") == supplier_id
-                        ):
-                            return True
-
-                elif isinstance(data_properties, dict):
-                    if data_properties.get("hasSupplierID") == supplier_id:
-                        return True
-
-                if instance.get("individualName") == expected_name:
-                    return True
-
-        return False
-
-
 
     def create_customer(
         self,
@@ -225,41 +173,84 @@ class BlueprintAdapter:
 
         return self.create_instance("Customer", payload)
 
-    def create_supplier(
+
+
+    def lead_manufacturer_exists(self, supplier_id: str) -> bool:
+        """Check whether a LeadManufacturer with this supplier ID exists."""
+        url = f"{self.base_url}/api/LeadManufacturer"
+
+        try:
+            response = requests.get(url, timeout=self.timeout)
+            response.raise_for_status()
+            body = response.json()
+        except (requests.RequestException, ValueError) as exc:
+            raise RuntimeError(
+                f"Could not check whether LeadManufacturer ID "
+                f"'{supplier_id}' exists: {exc}"
+            ) from exc
+
+        instances = body.get("instances", [])
+        expected_name = (
+            f"LeadManufacturer_{self._sanitize_id(supplier_id)}"
+        )
+
+        for instance in instances:
+            if isinstance(instance, str):
+                instance_name = instance.rstrip("/").split("#")[-1]
+                instance_name = instance_name.split("/")[-1]
+                if instance_name == expected_name:
+                    return True
+
+            elif isinstance(instance, dict):
+                if str(instance.get("hasSupplierID", "")) == str(supplier_id):
+                    return True
+
+                data_properties = instance.get("dataProperties", [])
+                if isinstance(data_properties, list):
+                    for prop in data_properties:
+                        if (
+                            isinstance(prop, dict)
+                            and prop.get("property") == "hasSupplierID"
+                            and str(prop.get("value", "")) == str(supplier_id)
+                        ):
+                            return True
+                elif isinstance(data_properties, dict):
+                    if str(data_properties.get("hasSupplierID", "")) == str(supplier_id):
+                        return True
+
+                if instance.get("individualName") == expected_name:
+                    return True
+
+        return False
+
+    def create_lead_manufacturer(
         self,
         ontology_record: dict[str, Any],
         individual_name: str,
     ) -> dict[str, Any]:
-        """Submit an ontology-mapped MaterialSupplier record."""
-    
-        if ontology_record.get("class") != "MaterialSupplier":
+        """Submit an ontology-mapped LeadManufacturer record."""
+        if ontology_record.get("class") != "LeadManufacturer":
             return {
                 "status": "error",
-                "message": "Expected ontology class 'MaterialSupplier'.",
+                "message": "Expected ontology class 'LeadManufacturer'.",
             }
-    
+
         properties = ontology_record.get("properties")
-    
         if not isinstance(properties, dict):
             return {
                 "status": "error",
-                "message": "Supplier properties must be a dictionary.",
+                "message": "LeadManufacturer properties must be a dictionary.",
             }
-    
+
         data_properties = [
             {"property": property_name, "value": value}
             for property_name, value in properties.items()
             if value is not None
         ]
-    
+
         payload = {
             "individualName": individual_name,
             "dataProperties": data_properties,
             "objectProperties": [],
         }
-    
-        return self.create_instance("MaterialSupplier", payload)
-    
-    
-    
-    
+        return self.create_instance("LeadManufacturer", payload)
