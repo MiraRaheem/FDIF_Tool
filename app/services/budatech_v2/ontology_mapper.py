@@ -38,6 +38,36 @@ def map_customer_to_ontology(
 
 from typing import Any
 
+def map_company_to_ontology(
+    company: dict[str, Any],
+) -> dict[str, Any]:
+    """Map canonical Company fields to the LeadManufacturer ontology class.
+
+    Mappings grounded in the class metadata:
+      companyId   -> hasSupplierID
+      companyName -> hasSupplierName
+      country     -> hasCountry
+
+    Abbreviation and default currency are retained in canonical data but are
+    not emitted because no corresponding data property was identified for
+    LeadManufacturer in the supplied ontology metadata.
+    """
+    property_mapping = {
+        "companyId": "hasSupplierID",
+        "companyName": "hasSupplierName",
+        "country": "hasCountry",
+    }
+
+    properties = {
+        ontology_property: company[canonical_field]
+        for canonical_field, ontology_property in property_mapping.items()
+        if company.get(canonical_field) is not None
+    }
+
+    return {
+        "class": "LeadManufacturer",
+        "properties": properties,
+    }
 
 def map_supplier_to_ontology(
     supplier: dict[str, Any],
