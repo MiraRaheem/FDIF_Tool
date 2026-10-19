@@ -1,6 +1,9 @@
 from fastapi import FastAPI
+
+
 from app.routers.budatech_v2.item import router as budatech_v2_test_router
-app.include_router(budatech_v2_test_router)
+
+
 from app.routers.budatec.supplier import router as supplier_router
 from app.routers.budatec.customer import router as customer_router
 from app.routers.medwood.supplier import router as medwood_supplier_router
@@ -24,6 +27,8 @@ app = FastAPI(
 # -------- ROUTERS --------
 
 # Budatec
+app.include_router(budatech_v2_test_router)
+
 app.include_router(supplier_router)
 app.include_router(customer_router)
 app.include_router(item_router)
