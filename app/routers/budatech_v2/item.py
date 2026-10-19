@@ -23,16 +23,17 @@ async def test_excel_reader(
         )
 
     try:
-        records = read_excel_records(file.file)
+        raw_records = read_excel_records(file.file)
+        records = normalize_records(raw_records)
 
         return {
             "entity": entity,
             "filename": file.filename,
             "record_count": len(records),
             "columns": list(records[0].keys()) if records else [],
-            "first_record": records[0] if records else None,
+            "original_first_record": raw_records[0] if raw_records else None,
+            "normalized_first_record": records[0] if records else None,
         }
-
     except Exception as exc:
         raise HTTPException(
             status_code=400,
