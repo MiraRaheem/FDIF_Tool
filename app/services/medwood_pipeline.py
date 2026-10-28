@@ -34,9 +34,7 @@ from app.services.validator import (
 )
 
 from app.services.blueprint_adapter_medwood_product import (
-    create_or_update_product_type,
-    create_product_type_id,
-    get_instances as get_product_type_instances,
+    create_or_update_product_type
 )
 from app.services.harmonizer import harmonize_bom
 
@@ -330,62 +328,6 @@ def process_product_type_json(body):
         "entity": "product_type",
         "canonical": canonical,
         "blueprint": result
-    }
-
-
-def process_product_type_ids_excel(file):
-    """Create ID-only ProductTypes from an Excel file with a product_code column."""
-    import pandas as pd
-
-    data = pd.read_excel(file.file, dtype={"product_code": "string"})
-    source_column = next(
-        (column for column in data.columns if str(column).strip().casefold() == "product_code"),
-        None,
-    )
-    if source_column is None:
-        raise ValueError("Excel file must contain a 'product_code' column")
-
-    product_ids = []
-    for value in data[source_column]:
-        if pd.isna(value):
-            continue
-        if isinstance(value, float) and value.is_integer():
-            value = int(value)
-        product_id = str(value).strip()
-        if product_id:
-            product_ids.append(product_id)
-
-    # Preserve first-seen order and avoid repeated API calls for duplicate rows.
-    unique_product_ids = list(dict.fromkeys(product_ids))
-    existing_ids = set()
-    for instance in get_product_type_instances():
-        if isinstance(instance, dict):
-            value = instance.get("hasProductID") or instance.get("productId")
-            if value is not None:
-                existing_ids.add(str(value).strip())
-        elif isinstance(instance, str):
-            # Existing API responses may return serialized instance identifiers.
-            existing_ids.update(
-                product_id for product_id in unique_product_ids if product_id in instance
-            )
-
-    results = []
-    for product_id in unique_product_ids:
-        try:
-            results.append(create_product_type_id(product_id, existing_ids))
-        except Exception as exc:
-            results.append({
-                "status": "error",
-                "productId": product_id,
-                "error": str(exc),
-            })
-
-    return {
-        "status": "completed",
-        "entity": "product_type",
-        "inputRows": len(data),
-        "uniqueProductIds": len(unique_product_ids),
-        "results": results,
     }
 
 
