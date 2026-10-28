@@ -19,6 +19,7 @@ from app.routers.medwood.product_type import (
     router as medwood_product_type_router
 )
 from app.routers.medwood.bom import router as medwood_bom_router
+from app.routers.medwood.data_files import router as medwood_data_files_router
 
 app = FastAPI(
     title="FDIF PoC",
@@ -46,6 +47,7 @@ app.include_router(medwood_material_router)
 app.include_router(medwood_component_router)
 app.include_router(medwood_product_type_router)
 app.include_router(medwood_bom_router)
+app.include_router(medwood_data_files_router)
 # CEP (Melito + future real-time ingestion)
 app.include_router(cep_router)  # ✅ NEW
 app.include_router(cep_data_router)
