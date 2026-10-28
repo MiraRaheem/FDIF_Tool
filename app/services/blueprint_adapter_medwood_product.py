@@ -122,3 +122,29 @@ def create_or_update_product_type(canonical):
         "productId": product_id,
         "blueprint": result
     }
+
+
+def create_product_type_id(product_id, existing_product_ids=None):
+    """Create an ID-only ProductType without inventing unknown product fields."""
+    existing_product_ids = existing_product_ids or set()
+    if product_id in existing_product_ids:
+        return {"status": "already_exists", "productId": product_id}
+
+    response = session.post(
+        f"{BASE_URL}/api/ProductType",
+        json={
+            "individualName": f"ProductType_{product_id}",
+            "dataProperties": [{
+                "property": "hasProductID",
+                "value": product_id,
+            }],
+            "objectProperties": [],
+        },
+    )
+    response.raise_for_status()
+    result = safe_json(response)
+    return {
+        "status": "created",
+        "productId": product_id,
+        "blueprint": result,
+    }
