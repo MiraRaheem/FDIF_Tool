@@ -191,7 +191,9 @@ def _prepare_manufactured_products(files: list[tuple[str, bytes]]) -> dict:
         values = {column: None if pd.isna(row[column]) else str(row[column]) for column in sorted(required)}
         digest = hashlib.sha256(json.dumps(values, ensure_ascii=False, sort_keys=True).encode()).hexdigest()[:16]
         occurrences[digest] += 1
-        name = f"MEDWOOD_ManufacturedProduct_{digest}_{occurrences[digest]}"
+        transaction_number = _clean(row["Número"]) or "unknown"
+        transaction_number = re.sub(r"[^A-Za-z0-9_-]+", "_", transaction_number).strip("_") or "unknown"
+        name = f"MEDWOOD_ManufacturedProduct{transaction_number}_{digest}_{occurrences[digest]}"
         data = [_property("hasManufacturedProductID", name)]
         quantity = _clean(row["Cantidad"])
         if quantity is not None:
