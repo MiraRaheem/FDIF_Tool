@@ -226,21 +226,21 @@ def _prepare_manufactured_products(files: list[tuple[str, bytes]]) -> dict:
 
 @router.post("/product-types", response_class=StreamingResponse)
 async def generate_product_type_files(
-    transactions_files: list[UploadFile] = File(..., description="One or more MEDWOOD Transactions XLSX/XLSB/CSV files"),
+    transactions_file: UploadFile = File(..., description="MEDWOOD Transactions XLSX/XLSB/CSV file"),
 ):
     """Prepare distinct article codes as ProductType IDs and download review files."""
     return await _generate_product_prep(
-        transactions_files, "ProductType", "medwood_product_type_outputs.zip"
+        [transactions_file], "ProductType", "medwood_product_type_outputs.zip"
     )
 
 
 @router.post("/manufactured-products", response_class=StreamingResponse)
 async def generate_manufactured_product_files(
-    transactions_files: list[UploadFile] = File(..., description="One or more MEDWOOD Transactions XLSX/XLSB/CSV files"),
+    transactions_file: UploadFile = File(..., description="MEDWOOD Transactions XLSX/XLSB/CSV file"),
 ):
     """Prepare ManufacturedProduct mappings from Referencia=Producción rows."""
     return await _generate_product_prep(
-        transactions_files, "ManufacturedProduct",
+        [transactions_file], "ManufacturedProduct",
         "medwood_manufactured_product_outputs.zip",
     )
 
