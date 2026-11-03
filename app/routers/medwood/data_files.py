@@ -4,18 +4,20 @@ from io import BytesIO
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from zipfile import ZIP_DEFLATED, ZipFile
+from collections import Counter
+from datetime import date, datetime
+import hashlib
+import re
+import unicodedata
 
 from fastapi import APIRouter, File, HTTPException, UploadFile
 from fastapi.responses import StreamingResponse
 import csv
 import json
+import pandas as pd
 
 from app.services.medwood_process_executions import build_process_execution_outputs
 from app.services.medwood_work_orders import write_work_order_csvs
-from app.services.medwood_production_ingestion import (
-    build_medwood_manufactured_products,
-    build_medwood_product_types,
-)
 
 router = APIRouter(
     prefix="/fdif/medwood/data-files",
@@ -88,10 +90,10 @@ def _write_prep_metadata(path: Path, build: dict) -> Path:
     return path
 
 
-async def _generate_product_prep(files: list[UploadFile], builder, entity: str, archive_name: str):
+async def _generate_product_prep(files: list[UploadFile], entity: str, archive_name: str):
     inputs = await _read_transaction_uploads(files)
     try:
-        build = builder(inputs)
+        build = _prepare_product_types(inputs) if entity == "ProductType" else _prepare_manufactured_products(inputs)
         with TemporaryDirectory(prefix=f"fdif-medwood-{entity.lower()}-") as temp_dir:
             root = Path(temp_dir)
             outputs = {
@@ -108,13 +110,127 @@ async def _generate_product_prep(files: list[UploadFile], builder, entity: str, 
             await upload.close()
 
 
+def _norm(value) -> str:
+    text = "" if pd.isna(value) else str(value).strip()
+    return "".join(char for char in unicodedata.normalize("NFKD", text).casefold() if not unicodedata.combining(char))
+
+
+def _clean(value):
+    if pd.isna(value):
+        return None
+    if isinstance(value, int):
+        return str(value)
+    if isinstance(value, float) and value.is_integer():
+        return str(int(value))
+    text = str(value).strip()
+    if not text or text.casefold() in {"nan", "none", "nat"}:
+        return None
+    return re.sub(r"^(\-?\d+)\.0+$", r"\1", text)
+
+
+def _local_name(prefix: str, value: str) -> str:
+    safe = re.sub(r"[^A-Za-z0-9_-]+", "_", f"{prefix}_{value}").strip("_")
+    return safe[:180] or prefix
+
+
+def _transaction_frames(files: list[tuple[str, bytes]], required: set[str]):
+    frames = []
+    warnings = []
+    for filename, content in files:
+        suffix = Path(filename).suffix.lower()
+        if suffix == ".csv":
+            workbook_frames = [pd.read_csv(BytesIO(content), dtype=object)]
+        elif suffix in {".xlsx", ".xlsm", ".xlsb"}:
+            engine = "pyxlsb" if suffix == ".xlsb" else "openpyxl"
+            workbook = pd.ExcelFile(BytesIO(content), engine=engine)
+            workbook_frames = []
+            for sheet in workbook.sheet_names:
+                if _norm(sheet) == "tabla" and len(workbook.sheet_names) > 1:
+                    continue
+                workbook_frames.append(pd.read_excel(workbook, sheet_name=sheet, dtype=object))
+        else:
+            raise ValueError(f"{filename}: unsupported file type {suffix or '(no extension)'}")
+        matching = []
+        for frame in workbook_frames:
+            frame.columns = [str(column).strip() for column in frame.columns]
+            if required.issubset(frame.columns):
+                matching.append(frame)
+        if not matching:
+            warnings.append(f"{filename}: no sheet contained required columns: {', '.join(sorted(required))}")
+        frames.extend(matching)
+    if not frames:
+        raise ValueError(f"No Transactions sheet contained required columns: {', '.join(sorted(required))}")
+    combined = pd.concat(frames, ignore_index=True, sort=False)
+    production = combined[combined["Referencia"].map(_norm).eq("produccion")].copy()
+    if production.empty:
+        warnings.append("No transaction rows matched Referencia = 'Producción'.")
+    return production, warnings
+
+
+def _property(name: str, value) -> dict:
+    return {"property": name, "value": str(value)}
+
+
+def _prepare_product_types(files: list[tuple[str, bytes]]) -> dict:
+    production, warnings = _transaction_frames(files, {"Código de artículo", "Referencia"})
+    codes = sorted({code for code in production["Código de artículo"].map(_clean) if code})
+    records = [{
+        "individualName": _local_name("ProductType", code),
+        "dataProperties": [_property("hasProductID", code)],
+        "objectProperties": [],
+    } for code in codes]
+    return {"entity": "ProductType", "summary": {"productionTransactionRows": len(production), "distinctArticleCodes": len(records)}, "warnings": warnings, "records": records}
+
+
+def _prepare_manufactured_products(files: list[tuple[str, bytes]]) -> dict:
+    required = {"Código de artículo", "Número", "Referencia", "Cantidad", "Fecha física", "Sitio", "Almacén"}
+    production, warnings = _transaction_frames(files, required)
+    records = []
+    occurrences = Counter()
+    for _, row in production.iterrows():
+        values = {column: None if pd.isna(row[column]) else str(row[column]) for column in sorted(required)}
+        digest = hashlib.sha256(json.dumps(values, ensure_ascii=False, sort_keys=True).encode()).hexdigest()[:16]
+        occurrences[digest] += 1
+        name = f"MEDWOOD_ManufacturedProduct_{digest}_{occurrences[digest]}"
+        data = [_property("hasManufacturedProductID", name)]
+        quantity = _clean(row["Cantidad"])
+        if quantity is not None:
+            try:
+                quantity = str(float(quantity.replace(",", ".")))
+            except ValueError:
+                pass
+            data.append(_property("hasManufacturedQuantity", quantity))
+        raw_date = row["Fecha física"]
+        if not pd.isna(raw_date):
+            if isinstance(raw_date, (date, datetime, pd.Timestamp)):
+                production_date = raw_date.date().isoformat() if isinstance(raw_date, (datetime, pd.Timestamp)) else raw_date.isoformat()
+            else:
+                parsed = pd.to_datetime(raw_date, errors="coerce", dayfirst=True)
+                production_date = None if pd.isna(parsed) else parsed.date().isoformat()
+            if production_date:
+                data.append(_property("hasProductionDate", production_date))
+        objects = []
+        article, order = _clean(row["Código de artículo"]), _clean(row["Número"])
+        site, warehouse = _clean(row["Sitio"]), _clean(row["Almacén"])
+        if article:
+            objects.append(_property("isInstanceOfProductType", _local_name("ProductType", article)))
+        if order:
+            objects.append(_property("isProducedByWorkOrder", _local_name("MEDWOOD_WorkOrder", order)))
+        if site:
+            objects.append(_property("producedAtFactory", "MEDWOOD_Factory" if _norm(site) == "mc" else _local_name("MEDWOOD_Factory", site)))
+        if warehouse and _norm(warehouse) not in {"none", "null", "n/a", "na"}:
+            objects.append(_property("isStoredIn", _local_name("MEDWOOD_Warehousing", warehouse.upper())))
+        records.append({"individualName": name, "dataProperties": data, "objectProperties": objects})
+    return {"entity": "ManufacturedProduct", "summary": {"productionTransactionRows": len(production), "manufacturedProductsPrepared": len(records)}, "warnings": warnings, "records": records}
+
+
 @router.post("/product-types", response_class=StreamingResponse)
 async def generate_product_type_files(
     transactions_files: list[UploadFile] = File(..., description="One or more MEDWOOD Transactions XLSX/XLSB/CSV files"),
 ):
     """Prepare distinct article codes as ProductType IDs and download review files."""
     return await _generate_product_prep(
-        transactions_files, build_medwood_product_types, "ProductType", "medwood_product_type_outputs.zip"
+        transactions_files, "ProductType", "medwood_product_type_outputs.zip"
     )
 
 
@@ -124,7 +240,7 @@ async def generate_manufactured_product_files(
 ):
     """Prepare ManufacturedProduct mappings from Referencia=Producción rows."""
     return await _generate_product_prep(
-        transactions_files, build_medwood_manufactured_products, "ManufacturedProduct",
+        transactions_files, "ManufacturedProduct",
         "medwood_manufactured_product_outputs.zip",
     )
 
