@@ -11,15 +11,8 @@ session = requests.Session()
 def normalize_id(value):
     if value is None:
         return None
-    return (
-        str(value)
-        .strip()
-        .replace(" ", "_")
-        .replace("/", "_")
-        .replace("\\", "_")
-        .replace("(", "")
-        .replace(")", "")
-    )
+    value = re.sub(r"[^A-Za-z0-9_-]+", "_", str(value).strip())
+    return re.sub(r"_+", "_", value).strip("_")
 
 
 def safe_json(response):
@@ -135,6 +128,46 @@ def create_instance(payload):
             f"Create station request failed: {e}"
         )
 
+
+def update_instance(station_id, payload):
+    url = f"{BASE_URL}/api/Station/{station_id}"
+    try:
+        response = session.put(url, json=payload, timeout=60)
+        if response.status_code not in [200, 201]:
+            raise RuntimeError(
+                f"Failed to update station. Status={response.status_code}, Response={response.text}"
+            )
+        result = safe_json(response)
+        if isinstance(result, dict) and result.get("status") == "error":
+            raise RuntimeError(f"NARRATE rejected station update: {result.get('message', result)}")
+        return result
+    except requests.RequestException as e:
+        raise RuntimeError(f"Update station request failed: {e}") from e
+
+
+def ensure_factory_exists():
+    factory_id = "MEDWOOD_Factory"
+    try:
+        response = session.get(f"{BASE_URL}/api/Factory", timeout=60)
+    except requests.RequestException as e:
+        raise RuntimeError(f"Could not check required factory {factory_id}: {e}") from e
+    if response.status_code != 200:
+        raise RuntimeError(
+            f"Could not check required factory {factory_id}. "
+            f"Status={response.status_code}, Response={response.text}"
+        )
+    data = safe_json(response)
+    instances = data.get("instances", []) if isinstance(data, dict) else []
+    found = any(
+        instance == factory_id
+        if isinstance(instance, str)
+        else isinstance(instance, dict) and instance.get("individualName") == factory_id
+        for instance in instances
+    )
+    if not found:
+        raise RuntimeError(f"Required Factory '{factory_id}' does not exist; no Station records were written")
+    return True
+
 def create_or_update_station(canonical):
 
     clean_id = normalize_id(canonical["stationId"])
@@ -149,7 +182,7 @@ def create_or_update_station(canonical):
         "dataProperties": [
             {
                 "property": "stationID",
-                "value": canonical["stationId"]
+                "value": canonical.get("sourceStationId") or canonical["stationId"]
             },
             {
                 "property": "stationName",
@@ -157,7 +190,7 @@ def create_or_update_station(canonical):
             },
             {
                 "property": "maxCapacity",
-                "value": canonical["capacityHoursPerDay"]
+                "value": canonical["maxCapacity"]
             },
             {
                 "property": "stationDescription",
