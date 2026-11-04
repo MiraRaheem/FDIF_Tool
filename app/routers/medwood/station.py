@@ -30,5 +30,9 @@ def ingest_station(body: Dict[str, Any]):
 async def upload_stations(file: UploadFile = File(...)):
     try:
         return process_station_excel(file)
+    except ValueError as e:
+        raise HTTPException(422, str(e))
     except Exception as e:
         raise HTTPException(400, str(e))
+    finally:
+        await file.close()
