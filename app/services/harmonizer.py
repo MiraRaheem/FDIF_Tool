@@ -63,27 +63,36 @@ def harmonize_medwood_station(row):
     else:
         name = str(name).strip()
 
-    quantity = row.get("Cantidad")
+    def station_number(value):
+        if value is None or pd.isna(value):
+            return None
+        if isinstance(value, str):
+            value = value.strip().replace(" ", "")
+            if "," in value and "." not in value:
+                value = value.replace(",", ".")
+        try:
+            return float(value)
+        except (TypeError, ValueError):
+            return None
 
-    if pd.isna(quantity):
-        quantity = None
-
-    capacity = row.get("Capacidad horas día")
-
-    if pd.isna(capacity):
-        capacity = None
+    quantity = station_number(row.get("Cantidad"))
+    capacity_hours_per_day = station_number(row.get("Capacidad horas día"))
+    source_station_id = name
 
     return {
         "stationId": normalize_id(name),
+        "sourceStationId": source_station_id,
         "stationName": name,
-        "capacityHoursPerDay": capacity,
+        # The ontology defines maxCapacity as a number of simultaneous
+        # processes or machines, so map the machine count rather than hours/day.
+        "maxCapacity": quantity,
+        "capacityHoursPerDay": capacity_hours_per_day,
         "machineCount": quantity,
         "stationLocatedInFactory": row.get("stationLocatedInFactory"),
-        "description": (
-            f"Machines: {quantity}"
-            if quantity is not None
-            else None
-        )
+        "description": "; ".join(part for part in (
+            f"Machines: {quantity:g}" if quantity is not None else None,
+            f"Capacity hours per day: {capacity_hours_per_day:g}" if capacity_hours_per_day is not None else None,
+        ) if part) or None,
     }
 
 def harmonize_medwood_material(row):
