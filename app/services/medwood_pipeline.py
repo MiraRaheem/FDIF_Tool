@@ -154,7 +154,8 @@ import pandas as pd
 from app.services.harmonizer import harmonize_medwood_station
 from app.services.validator import validate_station
 from app.services.blueprint_adapter_medwood_station import (
-    create_or_update_station
+    create_or_update_station,
+    ensure_factory_exists,
 )
 
 
@@ -178,35 +179,104 @@ def process_station_json(body):
 def process_station_excel(file):
 
     df = pd.read_excel(file.file)
-    rows = df.to_dict(orient="records")
+    required_columns = {"CENTROS DE TRABAJO", "Cantidad"}
+    missing_columns = sorted(required_columns - set(df.columns))
+    if missing_columns:
+        raise ValueError(f"Station workbook is missing required columns: {missing_columns}")
 
-    results = []
-
-    for i, row in enumerate(rows):
+    prepared = []
+    rejected = []
+    for index, row in df.iterrows():
+        excel_row = int(index) + 2
+        source_name = row.get("CENTROS DE TRABAJO")
+        source_name = None if pd.isna(source_name) else str(source_name).strip()
         try:
             canonical = harmonize_medwood_station(row)
             validated = validate_station(canonical)
-
-            create_or_update_station(validated)
-
-            results.append({
-                "row": i,
-                "status": "success",
-                "id": canonical["stationId"]
-            })
-
+            prepared.append({"row": excel_row, "canonical": validated})
         except Exception as e:
-            results.append({
-                "row": i,
-                "status": "error",
-                "error": str(e)
+            rejected.append({"row": excel_row, "stationName": source_name, "reason": str(e)})
+
+    # Reject all rows involved in a conflicting normalized ID before making
+    # any writes. Repeated identical rows keep the first and report the rest.
+    groups = {}
+    for item in prepared:
+        groups.setdefault(item["canonical"]["stationId"], []).append(item)
+
+    conflicted_rows = set()
+    duplicate_rows = set()
+    for station_id, items in groups.items():
+        if len(items) < 2:
+            continue
+        signatures = {
+            (
+                item["canonical"].get("sourceStationId"),
+                item["canonical"].get("stationName"),
+                item["canonical"].get("maxCapacity"),
+                item["canonical"].get("capacityHoursPerDay"),
+            )
+            for item in items
+        }
+        if len(signatures) > 1:
+            conflicted_rows.update(item["row"] for item in items)
+            for item in items:
+                rejected.append({
+                    "row": item["row"],
+                    "stationName": item["canonical"].get("stationName"),
+                    "reason": f"Station ID '{station_id}' conflicts with another row after ID normalization; all rows with this ID were skipped.",
+                })
+        else:
+            duplicate_rows.update(item["row"] for item in items[1:])
+            for item in items[1:]:
+                rejected.append({
+                    "row": item["row"],
+                    "stationName": item["canonical"].get("stationName"),
+                    "reason": f"Duplicate of row {items[0]['row']} with identical Station data; duplicate row was skipped.",
+                })
+
+    ingested = []
+    ingestion_failures = []
+    eligible = [
+        item for item in prepared
+        if item["row"] not in conflicted_rows and item["row"] not in duplicate_rows
+    ]
+    if eligible:
+        try:
+            ensure_factory_exists()
+        except Exception as e:
+            ingestion_failures.extend({
+                "row": item["row"],
+                "stationId": item["canonical"]["stationId"],
+                "reason": str(e),
+            } for item in eligible)
+            eligible = []
+
+    for item in eligible:
+        canonical = item["canonical"]
+        try:
+            result = create_or_update_station(canonical)
+            ingested.append({
+                "row": item["row"],
+                "stationId": canonical["stationId"],
+                "status": result.get("status", "success") if isinstance(result, dict) else "success",
+            })
+        except Exception as e:
+            ingestion_failures.append({
+                "row": item["row"],
+                "stationId": canonical["stationId"],
+                "reason": str(e),
             })
 
     return {
-        "status": "completed",
+        "status": "completed_with_issues" if rejected or ingestion_failures else "completed",
         "entity": "station",
-        "total": len(rows),
-        "results": results[:10]
+        "total": len(df),
+        "ingestedCount": len(ingested),
+        "rejectedCount": len(rejected),
+        "ingestionFailureCount": len(ingestion_failures),
+        "ingested": ingested,
+        "rejected": rejected,
+        "ingestionFailures": ingestion_failures,
     }
 
 def process_material_json(body):
