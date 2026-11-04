@@ -66,7 +66,8 @@ class BlueprintClient:
         data_properties: set[str],
         object_properties: set[str] = frozenset(),
         supplied_data_properties: set[str] | None = None,
-    ) -> None:
+        allow_required_omissions: bool = False,
+    ) -> list[str]:
         """Fail before writes if the deployed blueprint cannot store this mapping."""
         url = f"{BASE_URL}/api/query/metadata/{quote(class_name, safe='')}"
         try:
@@ -97,12 +98,15 @@ class BlueprintClient:
                 name for name, limits in cardinalities.items()
                 if name not in supplied_data_properties and isinstance(limits, dict) and int(limits.get("min", 0) or 0) > 0
             )
-            if still_required:
+            if still_required and not allow_required_omissions:
                 raise RuntimeError(
                     f"The {class_name} blueprint still requires omitted properties: "
                     + ", ".join(still_required)
                     + ". Relax those minimum cardinalities before ingestion."
                 )
+            if still_required:
+                return still_required
+        return []
 
     def upsert(
         self,
@@ -389,15 +393,22 @@ def ingest_product_types(content: bytes) -> dict[str, Any]:
             report["rejectedRecords"].append({"sourceRow": source_row, "sourceData": _source_data(row), "reason": str(exc)})
     records = _deduplicate(records, "key", report["rejectedRecords"])
     report["warnings"].append(
-        "hasProductName, hasProductCost, and hasProductPrice are absent from this review file and are omitted; "
-        "the NARRATE ProductType cardinalities must be relaxed for these ID-only records to be accepted."
+        "hasProductName, hasProductCost, hasProductPrice, and hasProductionDate are absent from this review file and are omitted; "
+        "these ProductType records are intentionally staged with only their IDs so they can be completed later."
     )
     client = BlueprintClient()
-    client.validate_blueprint(
+    still_required = client.validate_blueprint(
         "ProductType",
         data_properties={"hasProductID"},
         supplied_data_properties={"hasProductID"},
+        allow_required_omissions=True,
     )
+    if still_required:
+        report["warnings"].append(
+            "ProductType IDs are being staged without these required blueprint values, as requested: "
+            + ", ".join(still_required)
+            + ". Fernando can complete them later."
+        )
     existing = client.list_names("ProductType")
     _ingest_rows(client, "ProductType", records, existing, report)
     return _finish(report)
