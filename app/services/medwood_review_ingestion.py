@@ -271,7 +271,7 @@ def _source_data(row: dict[str, str]) -> dict[str, str]:
 def _property(name: str, value: Any) -> dict[str, Any]:
     # These identifiers are xsd:string in the ontology. Always serialize them
     # as JSON strings; never parse numeric-looking IDs as numbers in Python.
-    if name in {"hasProductID", "hasWorkOrderID"}:
+    if name in {"hasProductID", "hasWorkOrderID", "hasExecutionID"}:
         value = _ontology_identifier(str(value), name)
     elif name in {"hasRequestedQuantity", "hasCompletedQuantity"} and value is not None:
         # Both WorkOrder quantity properties have xsd:integer ranges.
@@ -538,10 +538,23 @@ def ingest_work_orders(content: bytes) -> dict[str, Any]:
 
 
 def ingest_process_executions(content: bytes) -> dict[str, Any]:
-    rows, _ = _read_csv(content, {"hasExecutionID", "isPartOfWorkOrder"})
+    rows, _ = _read_csv(content, {
+        "hasExecutionID", "isPartOfWorkOrder", "hasExecutionStartTimeCandidate",
+        "hasExecutionEndTimeCandidate", "hasActualDurationMinutesCandidate",
+        "hasOutputQuantityCandidate", "hasDefectQuantityCandidate",
+        "hasExecutionStatusCandidate", "workCentreLabelCandidate",
+    })
     report = _base_report("ProcessExecution", len(rows))
     client = BlueprintClient()
-    client.validate_blueprint("ProcessExecution", data_properties={"hasExecutionID", "hasExecutionStatus"}, object_properties={"isPartOfWorkOrder"})
+    client.validate_blueprint(
+        "ProcessExecution",
+        data_properties={
+            "hasExecutionID", "hasExecutionStatus", "hasExecutionStartTime",
+            "hasExecutionEndTime", "hasActualDurationMinutes", "hasOutputQuantity",
+            "hasDefectQuantity",
+        },
+        object_properties={"isPartOfWorkOrder"},
+    )
     client.validate_blueprint("WorkOrder", data_properties=set(), object_properties={"includesExecution"})
     work_orders = client.list_names("WorkOrder")
     process_executions = client.list_names("ProcessExecution")
@@ -558,6 +571,40 @@ def ingest_process_executions(content: bytes) -> dict[str, Any]:
             if work_order_name not in work_orders:
                 raise ValueError(f"Referenced WorkOrder {work_order_name!r} does not exist; ingest WorkOrders first")
             data = [_property("hasExecutionID", execution_id)]
+            start_time = _execution_timestamp(
+                _value(row, "hasExecutionStartTimeCandidate"), "hasExecutionStartTimeCandidate"
+            )
+            end_time = _execution_timestamp(
+                _value(row, "hasExecutionEndTimeCandidate"), "hasExecutionEndTimeCandidate"
+            )
+            if start_time and end_time and end_time < start_time:
+                raise ValueError("hasExecutionEndTimeCandidate is earlier than hasExecutionStartTimeCandidate")
+            if start_time:
+                data.append(_property("hasExecutionStartTime", start_time))
+            if end_time:
+                data.append(_property("hasExecutionEndTime", end_time))
+
+            for source_field, property_name in (
+                ("hasActualDurationMinutesCandidate", "hasActualDurationMinutes"),
+                ("hasOutputQuantityCandidate", "hasOutputQuantity"),
+                ("hasDefectQuantityCandidate", "hasDefectQuantity"),
+            ):
+                raw_number = _value(row, source_field)
+                number = _number(raw_number, source_field, minimum=0)
+                if number is None:
+                    continue
+                if not isinstance(number, int):
+                    report["recordWarnings"].append({
+                        "sourceRow": source_row,
+                        "recordId": execution_name,
+                        "property": property_name,
+                        "sourceField": source_field,
+                        "value": raw_number,
+                        "reason": "Fractional value omitted because the ontology range is xsd:integer; other valid ProcessExecution values will still be ingested.",
+                    })
+                    continue
+                data.append(_property(property_name, number))
+
             status = _value(row, "hasExecutionStatusCandidate")
             if status:
                 allowed_statuses = {"Cancelled", "Completed", "Failed", "Interrupted", "Paused", "Planned", "Running", "Scheduled"}
@@ -570,6 +617,7 @@ def ingest_process_executions(content: bytes) -> dict[str, Any]:
                 "key": execution_id,
                 "individualName": execution_name,
                 "workOrderName": work_order_name,
+                "workCentreLabel": _value(row, "workCentreLabelCandidate") or None,
                 "dataProperties": data,
                 "objectProperties": [_object_property("isPartOfWorkOrder", work_order_name)],
             })
@@ -582,7 +630,9 @@ def ingest_process_executions(content: bytes) -> dict[str, Any]:
             })
     records = _deduplicate(records, "key", report["rejectedRecords"])
     report["warnings"].extend([
-        "Date-only start/end candidates, aggregated duration, and good/defect quantities are omitted pending confirmation of timestamp and row-additivity semantics.",
+        "Date-only start/end candidates are stored at 00:00:00Z to satisfy the ontology's xsd:dateTimeStamp range. UTC midnight is a datatype-compatible storage convention; the source does not contain an observed time or timezone.",
+        "Duration, good-output, and defect candidates are ingested when they are whole numbers. They are sums across dated rows; confirm those rows are additive before treating the values as authoritative. Missing and fractional values are omitted and fractional values are reported per record.",
+        "workCentreLabelCandidate is preserved in the review CSV but not ingested: usesMachineInstance requires a Machine individual, and a text label is not a verified Machine instance.",
         "executesProcess is omitted because no reusable ProductionProcess identifier is present.",
     ])
     succeeded = _ingest_rows(client, "ProcessExecution", records, process_executions, report)
@@ -657,6 +707,27 @@ def _ontology_datetime(value: str, field: str) -> str | None:
             "expected ISO, M/D/YYYY, D/M/YYYY, D.M.YYYY, or a supported timestamp format"
         )
     return parsed.isoformat(timespec="auto")
+
+
+def _execution_timestamp(value: str, field: str) -> str | None:
+    """Format reviewed dates for the ProcessExecution xsd:dateTimeStamp range.
+
+    Review candidates are date-only. Midnight UTC is used as a storage
+    convention to satisfy the timezone-required datatype; it does not claim
+    that a clock time was observed.
+    """
+    normalized = _ontology_datetime(value, field)
+    if normalized is None:
+        return None
+    if normalized.endswith("Z"):
+        return normalized
+    if normalized.endswith("+00:00"):
+        return normalized[:-6] + "Z"
+    if normalized.endswith("T00:00:00"):
+        return normalized + "Z"
+    raise ValueError(
+        f"{field} must include a timezone to satisfy the ontology's xsd:dateTimeStamp range"
+    )
 
 
 def ingest_manufactured_products(content: bytes) -> dict[str, Any]:
