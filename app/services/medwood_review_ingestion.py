@@ -8,7 +8,7 @@ import math
 import os
 import re
 from collections import defaultdict
-from datetime import date
+from datetime import date, datetime
 from typing import Any
 from urllib.parse import quote
 
@@ -491,8 +491,9 @@ def ingest_work_orders(content: bytes) -> dict[str, Any]:
     report["warnings"].extend([
         "hasCompletedQuantity uses unvalidatedSumPiezasBuenasAcrossPerformanceRows as requested. This is an unvalidated sum "
         "across Performance rows and may double-count pieces reported at multiple stations; review it before treating it as authoritative.",
-        "Actual start/end date candidates are date-only and stored as xsd:dateTime at midnight (YYYY-MM-DDT00:00:00); "
-        "the source does not provide time-of-day precision.",
+        "Actual start/end date candidates accept common date/date-time formats and are normalized to xsd:dateTime. "
+        "Date-only values become midnight; timestamps retain their time and timezone when supplied. "
+        "Ambiguous slash dates use month/day/year, matching the reviewed export.",
         "appliesToProduct is omitted until ManufacturedProduct individuals exist; the ontology range is ManufacturedProduct. "
         "The ManufacturedProduct ingestion endpoint will add the inverse WorkOrder.appliesToProduct relationship later.",
         "includesExecution is omitted until ProcessExecution individuals exist; the ProcessExecution ingestion endpoint "
@@ -591,14 +592,46 @@ def _iso_date(value: str) -> str | None:
 
 
 def _ontology_datetime(value: str, field: str) -> str | None:
-    """Convert a reviewed date-only value to xsd:dateTime at midnight."""
+    """Parse common source date formats and normalize them to xsd:dateTime."""
     if not value:
         return None
+    normalized = value.strip()
     try:
-        parsed_date = date.fromisoformat(value)
-    except ValueError as exc:
-        raise ValueError(f"{field} must be an ISO date (YYYY-MM-DD)") from exc
-    return f"{parsed_date.isoformat()}T00:00:00"
+        parsed = datetime.fromisoformat(normalized.replace("Z", "+00:00"))
+    except ValueError:
+        parsed = None
+
+    if parsed is None:
+        # The reviewed export includes US-style M/D/YYYY values such as
+        # 1/7/2026. Try month-first before day-first so ambiguous slash dates
+        # follow the source export's convention. If the first component is
+        # over 12, month-first cannot match and day-first is used instead.
+        accepted_formats = (
+            "%m/%d/%Y %I:%M:%S %p", "%m/%d/%Y %I:%M %p",
+            "%m/%d/%Y %H:%M:%S", "%m/%d/%Y %H:%M",
+            "%m/%d/%y %I:%M:%S %p", "%m/%d/%y %I:%M %p",
+            "%m/%d/%y %H:%M:%S", "%m/%d/%y %H:%M",
+            "%m/%d/%Y", "%m/%d/%y",
+            "%d/%m/%Y %H:%M:%S", "%d/%m/%Y %H:%M", "%d/%m/%Y",
+            "%d/%m/%y %H:%M:%S", "%d/%m/%y %H:%M", "%d/%m/%y",
+            "%Y/%m/%d %H:%M:%S", "%Y/%m/%d %H:%M", "%Y/%m/%d",
+            "%d.%m.%Y %H:%M:%S", "%d.%m.%Y %H:%M", "%d.%m.%Y",
+            "%d.%m.%y", "%d-%m-%Y %H:%M:%S", "%d-%m-%Y %H:%M",
+            "%d-%m-%Y", "%d-%m-%y",
+        )
+        for date_format in accepted_formats:
+            try:
+                parsed = datetime.strptime(normalized, date_format)
+                break
+            except ValueError:
+                continue
+
+    if parsed is None:
+        raise ValueError(
+            f"{field} value {value!r} is not a supported date/date-time; "
+            "expected ISO, M/D/YYYY, D/M/YYYY, D.M.YYYY, or a supported timestamp format"
+        )
+    return parsed.isoformat(timespec="auto")
 
 
 def ingest_manufactured_products(content: bytes) -> dict[str, Any]:
