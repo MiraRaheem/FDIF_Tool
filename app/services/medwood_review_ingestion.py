@@ -411,6 +411,42 @@ def _ingest_rows(
     return succeeded
 
 
+def _verify_class_membership(
+    client: BlueprintClient,
+    class_name: str,
+    succeeded: list[dict[str, Any]],
+    report: dict[str, Any],
+) -> list[dict[str, Any]]:
+    """Only report a write as ingested after the class API can read it back."""
+    visible_names = client.list_names(class_name)
+    report_by_name = {item["recordId"]: item for item in report["ingested"]}
+    confirmed = []
+    for item in succeeded:
+        record = report_by_name.get(item["individualName"])
+        if item["individualName"] in visible_names:
+            if record is not None:
+                record["verifiedInClass"] = class_name
+            confirmed.append(item)
+            continue
+
+        action = record.get("action") if record else None
+        if action in {"created", "updated"}:
+            report["summary"][action] = max(0, report["summary"][action] - 1)
+        if record is not None:
+            report["ingested"].remove(record)
+        report["failedRecords"].append({
+            "sourceRow": item["sourceRow"],
+            "recordId": item["individualName"],
+            "reason": (
+                f"NARRATE accepted the write request, but the {class_name} instances endpoint "
+                "did not return this individual afterward; ingestion could not be verified."
+            ),
+            "sourceData": item.get("sourceData"),
+        })
+    report["summary"]["verified"] = len(confirmed)
+    return confirmed
+
+
 def ingest_product_types(content: bytes) -> dict[str, Any]:
     rows, _ = _read_csv(content, {"individualName", "hasProductID"})
     report = _base_report("ProductType", len(rows))
@@ -851,6 +887,7 @@ def ingest_manufactured_products(content: bytes) -> dict[str, Any]:
         "Direct links are isInstanceOfProductType, isProducedByWorkOrder, producedAtFactory, and isStoredIn when the matching Warehouse exists. The inverse links are synchronized on ProductType, WorkOrder, Factory, and Warehousing.",
     ])
     succeeded = _ingest_rows(client, "ManufacturedProduct", records, manufactured_products, report)
+    succeeded = _verify_class_membership(client, "ManufacturedProduct", succeeded, report)
     ingested_by_id = {item["recordId"]: item for item in report["ingested"]}
 
     reverse_relations: dict[tuple[str, str, str], list[tuple[dict[str, str], dict[str, Any]]]] = defaultdict(list)
