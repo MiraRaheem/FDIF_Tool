@@ -17,6 +17,7 @@ import json
 import pandas as pd
 
 from app.services.medwood_process_executions import build_process_execution_outputs
+from app.services.medwood_review_ingestion import _ontology_datetime
 from app.services.medwood_work_orders import write_work_order_csvs
 
 router = APIRouter(
@@ -129,7 +130,7 @@ def _clean(value):
 
 
 def _local_name(prefix: str, value: str) -> str:
-    safe = re.sub(r"[^A-Za-z0-9_-]+", "_", f"{prefix}_{value}").strip("_")
+    safe = re.sub(r"_+", "_", re.sub(r"[^A-Za-z0-9_-]+", "_", f"{prefix}_{value}").strip("_")).strip("_")
     return safe[:180] or prefix
 
 
@@ -207,8 +208,8 @@ def _prepare_manufactured_products(files: list[tuple[str, bytes]]) -> dict:
             if isinstance(raw_date, (date, datetime, pd.Timestamp)):
                 production_date = raw_date.date().isoformat() if isinstance(raw_date, (datetime, pd.Timestamp)) else raw_date.isoformat()
             else:
-                parsed = pd.to_datetime(raw_date, errors="coerce", dayfirst=True)
-                production_date = None if pd.isna(parsed) else parsed.date().isoformat()
+                parsed = _ontology_datetime(str(raw_date), "Fecha física")
+                production_date = parsed[:10] if parsed else None
             if production_date:
                 data.append(_property("hasProductionDate", production_date))
         objects = []
