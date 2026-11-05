@@ -211,6 +211,10 @@ def _read_csv(content: bytes, required_headers: set[str]) -> tuple[list[dict[str
         if None in row:
             raise ValueError(f"CSV row {source_row} has more fields than the header")
         normalized = {str(key or "").strip(): str(value or "").strip() for key, value in row.items() if key is not None}
+        if not any(normalized.values()):
+            # Excel can export thousands of trailing blank rows. They aren't
+            # records and should not inflate rejectedRecords or rowsReceived.
+            continue
         normalized["__sourceRow"] = str(source_row)
         rows.append(normalized)
     if not rows:
@@ -821,13 +825,19 @@ def ingest_manufactured_products(content: bytes) -> dict[str, Any]:
             product_type = _required(_value(row, "isInstanceOfProductType"), "isInstanceOfProductType")
             work_order = _required(_value(row, "isProducedByWorkOrder"), "isProducedByWorkOrder")
             factory = _required(_value(row, "producedAtFactory"), "producedAtFactory")
+            missing_references = []
             for class_name, individual, names in (
                 ("ProductType", product_type, product_types),
                 ("WorkOrder", work_order, work_orders),
                 ("Factory", factory, factories),
             ):
                 if individual not in names:
-                    raise ValueError(f"Referenced {class_name} {individual!r} does not exist")
+                    missing_references.append(f"{class_name} {individual!r}")
+            if missing_references:
+                raise ValueError(
+                    "Referenced individuals do not exist: " + ", ".join(missing_references)
+                    + ". Ingest the referenced ProductType and WorkOrder records first."
+                )
             data = [_property("hasManufacturedProductID", product_id)]
             quantity = _number(_value(row, "hasManufacturedQuantity"), "hasManufacturedQuantity", minimum=0)
             if quantity is None:
