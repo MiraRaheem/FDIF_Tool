@@ -245,6 +245,14 @@ def _required(value: str, label: str) -> str:
     return value
 
 
+def _ontology_identifier(value: str, field: str) -> str:
+    """Keep source identifiers as lexical strings, including leading zeroes."""
+    identifier = str(value).strip()
+    if not identifier:
+        raise ValueError(f"{field} is required")
+    return identifier
+
+
 def _local_part(value: str) -> str:
     return re.sub(r"_+", "_", re.sub(r"[^A-Za-z0-9_-]+", "_", value).strip("_")).strip("_")
 
@@ -261,6 +269,23 @@ def _source_data(row: dict[str, str]) -> dict[str, str]:
 
 
 def _property(name: str, value: Any) -> dict[str, Any]:
+    # These identifiers are xsd:string in the ontology. Always serialize them
+    # as JSON strings; never parse numeric-looking IDs as numbers in Python.
+    if name in {"hasProductID", "hasWorkOrderID"}:
+        value = _ontology_identifier(str(value), name)
+    elif name in {"hasRequestedQuantity", "hasCompletedQuantity"} and value is not None:
+        # Both WorkOrder quantity properties have xsd:integer ranges.
+        numeric = float(value)
+        if not math.isfinite(numeric) or not numeric.is_integer():
+            raise ValueError(f"{name} must be an integer for the ontology")
+        value = int(numeric)
+    elif name in {"hasActualStartDate", "hasActualEndDate"} and value is not None:
+        # The WorkOrder date properties have xsd:dateTime ranges.
+        normalized = str(value).strip().replace("Z", "+00:00")
+        try:
+            value = datetime.fromisoformat(normalized).isoformat(timespec="auto")
+        except ValueError as exc:
+            raise ValueError(f"{name} must be normalized to an ISO xsd:dateTime") from exc
     return {"property": name, "value": value}
 
 
@@ -379,7 +404,7 @@ def ingest_product_types(content: bytes) -> dict[str, Any]:
     for row in rows:
         source_row = int(row["__sourceRow"])
         try:
-            product_id = _required(_value(row, "hasProductID"), "hasProductID")
+            product_id = _ontology_identifier(_value(row, "hasProductID"), "hasProductID")
             name = _required(_value(row, "individualName"), "individualName")
             expected_name = _individual("ProductType", product_id)
             if name != expected_name:
@@ -424,7 +449,7 @@ def ingest_work_orders(content: bytes) -> dict[str, Any]:
     for row in rows:
         source_row = int(row["__sourceRow"])
         try:
-            work_order_id = _required(_value(row, "hasWorkOrderID"), "hasWorkOrderID")
+            work_order_id = _ontology_identifier(_value(row, "hasWorkOrderID"), "hasWorkOrderID")
             name = _individual("MEDWOOD_WorkOrder", work_order_id)
             data = [_property("hasWorkOrderID", work_order_id)]
             requested_quantity = _number(
