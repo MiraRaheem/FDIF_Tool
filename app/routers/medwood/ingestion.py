@@ -56,7 +56,14 @@ async def ingest_work_order_review(file: UploadFile = File(..., description="wor
 
 @router.post("/process-executions")
 async def ingest_process_execution_review(file: UploadFile = File(..., description="medwood_process_executions_review.csv")):
-    """Create or update ProcessExecutions and link them to existing WorkOrders."""
+    """Create/update ProcessExecutions with reviewed dates, duration, quantities, status, and WorkOrder link.
+
+    Date-only candidates are stored as midnight UTC to satisfy xsd:dateTimeStamp;
+    this is a storage convention, not an observed clock time. Duration/output/
+    defect candidates are row sums and should be reviewed for additivity. A work
+    centre label is not linked to usesMachineInstance unless a matching Machine
+    individual is available.
+    """
     return await _upload_and_ingest(file, ingest_process_executions)
 
 
