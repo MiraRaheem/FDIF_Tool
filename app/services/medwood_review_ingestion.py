@@ -8,7 +8,7 @@ import math
 import os
 import re
 from collections import defaultdict
-from datetime import date, datetime
+from datetime import datetime
 from typing import Any
 from urllib.parse import quote
 
@@ -271,16 +271,19 @@ def _source_data(row: dict[str, str]) -> dict[str, str]:
 def _property(name: str, value: Any) -> dict[str, Any]:
     # These identifiers are xsd:string in the ontology. Always serialize them
     # as JSON strings; never parse numeric-looking IDs as numbers in Python.
-    if name in {"hasProductID", "hasWorkOrderID", "hasExecutionID"}:
+    if name in {"hasProductID", "hasWorkOrderID", "hasExecutionID", "hasManufacturedProductID"}:
         value = _ontology_identifier(str(value), name)
-    elif name in {"hasRequestedQuantity", "hasCompletedQuantity"} and value is not None:
-        # Both WorkOrder quantity properties have xsd:integer ranges.
+    elif name in {
+        "hasRequestedQuantity", "hasCompletedQuantity", "hasManufacturedQuantity",
+        "hasActualDurationMinutes", "hasOutputQuantity", "hasDefectQuantity",
+    } and value is not None:
+        # These MEDWOOD quantity/duration properties have xsd:integer ranges.
         numeric = float(value)
         if not math.isfinite(numeric) or not numeric.is_integer():
             raise ValueError(f"{name} must be an integer for the ontology")
         value = int(numeric)
-    elif name in {"hasActualStartDate", "hasActualEndDate"} and value is not None:
-        # The WorkOrder date properties have xsd:dateTime ranges.
+    elif name in {"hasActualStartDate", "hasActualEndDate", "hasProductionDate"} and value is not None:
+        # These date properties have xsd:dateTime ranges.
         normalized = str(value).strip().replace("Z", "+00:00")
         try:
             value = datetime.fromisoformat(normalized).isoformat(timespec="auto")
@@ -384,13 +387,18 @@ def _ingest_rows(
                 "sourceRow": item["sourceRow"],
                 "recordId": item["individualName"],
                 "action": action,
+                "dataProperties": item.get("dataProperties", []),
             }
-            if item.get("workOrderName"):
-                output["relationships"] = [{
-                    "property": "isPartOfWorkOrder",
-                    "target": item["workOrderName"],
-                    "status": "linked",
-                }]
+            direct_relationships = item.get("objectProperties", [])
+            if direct_relationships:
+                output["relationships"] = [
+                    {
+                        "property": relationship["property"],
+                        "target": relationship["value"],
+                        "status": "linked",
+                    }
+                    for relationship in direct_relationships
+                ]
             report["ingested"].append(output)
             succeeded.append(item)
         except Exception as exc:
@@ -676,15 +684,6 @@ def ingest_process_executions(content: bytes) -> dict[str, Any]:
     return _finish(report)
 
 
-def _iso_date(value: str) -> str | None:
-    if not value:
-        return None
-    try:
-        return date.fromisoformat(value).isoformat()
-    except ValueError as exc:
-        raise ValueError("hasProductionDate must be an ISO date (YYYY-MM-DD)") from exc
-
-
 def _ontology_datetime(value: str, field: str) -> str | None:
     """Parse common source date formats and normalize them to xsd:dateTime."""
     if not value:
@@ -797,8 +796,12 @@ def ingest_manufactured_products(content: bytes) -> dict[str, Any]:
             quantity = _number(_value(row, "hasManufacturedQuantity"), "hasManufacturedQuantity", minimum=0)
             if quantity is None:
                 raise ValueError("hasManufacturedQuantity is required")
+            if not isinstance(quantity, int):
+                raise ValueError(
+                    "hasManufacturedQuantity must be a whole number because its ontology range is xsd:integer"
+                )
             data.append(_property("hasManufacturedQuantity", quantity))
-            production_date = _iso_date(_value(row, "hasProductionDate"))
+            production_date = _ontology_datetime(_value(row, "hasProductionDate"), "hasProductionDate")
             if production_date is None:
                 raise ValueError("hasProductionDate is required")
             data.append(_property("hasProductionDate", production_date))
@@ -812,9 +815,13 @@ def ingest_manufactured_products(content: bytes) -> dict[str, Any]:
                 if warehouse in warehouses:
                     objects.append(_object_property("isStoredIn", warehouse))
                 else:
-                    report["warnings"].append(
-                        f"Row {source_row}: Warehouse {warehouse!r} does not exist; isStoredIn will be omitted."
-                    )
+                    report["recordWarnings"].append({
+                        "sourceRow": source_row,
+                        "recordId": name,
+                        "property": "isStoredIn",
+                        "value": warehouse,
+                        "reason": "No matching Warehousing individual exists; the ManufacturedProduct will be ingested without this relationship.",
+                    })
             records.append({
                 "sourceRow": source_row,
                 "sourceData": _source_data(row),
@@ -838,7 +845,13 @@ def ingest_manufactured_products(content: bytes) -> dict[str, Any]:
     report["warnings"].append(
         "Generated ManufacturedProduct IDs identify the prepared transaction row; a source row correction changes its hash and therefore its individual name."
     )
+    report["warnings"].extend([
+        "hasProductionDate accepts common source date/date-time formats and is normalized to ISO xsd:dateTime; date-only values become midnight without claiming an observed time.",
+        "hasManufacturedQuantity has an xsd:integer range. Fractional values are rejected instead of truncated or sent with an incompatible datatype.",
+        "Direct links are isInstanceOfProductType, isProducedByWorkOrder, producedAtFactory, and isStoredIn when the matching Warehouse exists. The inverse links are synchronized on ProductType, WorkOrder, Factory, and Warehousing.",
+    ])
     succeeded = _ingest_rows(client, "ManufacturedProduct", records, manufactured_products, report)
+    ingested_by_id = {item["recordId"]: item for item in report["ingested"]}
 
     reverse_relations: dict[tuple[str, str, str], list[tuple[dict[str, str], dict[str, Any]]]] = defaultdict(list)
     for item in succeeded:
@@ -855,8 +868,22 @@ def ingest_manufactured_products(content: bytes) -> dict[str, Any]:
     for (class_name, target_name, property_name), entries in reverse_relations.items():
         try:
             client.add_object_properties(class_name, target_name, [entry[0] for entry in entries])
+            for _, item in entries:
+                ingested_by_id[item["individualName"]].setdefault("relationships", []).append({
+                    "property": property_name,
+                    "target": target_name,
+                    "status": "linked",
+                    "direction": "inverse",
+                })
         except Exception as exc:
             for _, item in entries:
+                ingested_by_id[item["individualName"]].setdefault("relationships", []).append({
+                    "property": property_name,
+                    "target": target_name,
+                    "status": "failed",
+                    "direction": "inverse",
+                    "reason": str(exc),
+                })
                 report["relationshipFailures"].append({
                     "sourceRow": item["sourceRow"],
                     "recordId": item["individualName"],
