@@ -89,7 +89,14 @@ async def ingest_process_execution_review(
     return await _upload_and_ingest(file, ingest_process_executions)
 
 
-@router.post("/manufactured-products")
-async def ingest_manufactured_product_review(file: UploadFile = File(..., description="manufacturedproduct_review.csv")):
-    """Create or update ManufacturedProducts and synchronize inverse links."""
+@router.post("/manufactured-products", response_model=IngestionReport)
+async def ingest_manufactured_product_review(
+    file: UploadFile = File(..., description="manufacturedproduct_review.csv"),
+) -> IngestionReport:
+    """Create/update transaction-row ManufacturedProducts with reviewed data and inverse links.
+
+    Maps the manufactured ID, integer quantity, normalized production date,
+    ProductType, WorkOrder, Factory, and optional Warehouse relationships.
+    Returns per-row data and the status of each direct and inverse relationship.
+    """
     return await _upload_and_ingest(file, ingest_manufactured_products)
