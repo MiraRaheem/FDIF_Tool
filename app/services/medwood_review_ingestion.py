@@ -385,6 +385,12 @@ def _ingest_rows(
                 "recordId": item["individualName"],
                 "action": action,
             }
+            if item.get("workOrderName"):
+                output["relationships"] = [{
+                    "property": "isPartOfWorkOrder",
+                    "target": item["workOrderName"],
+                    "status": "linked",
+                }]
             report["ingested"].append(output)
             succeeded.append(item)
         except Exception as exc:
@@ -636,6 +642,7 @@ def ingest_process_executions(content: bytes) -> dict[str, Any]:
         "executesProcess is omitted because no reusable ProductionProcess identifier is present.",
     ])
     succeeded = _ingest_rows(client, "ProcessExecution", records, process_executions, report)
+    ingested_by_id = {item["recordId"]: item for item in report["ingested"]}
     reverse_by_work_order: dict[str, list[tuple[dict[str, str], dict[str, Any]]]] = defaultdict(list)
     for item in succeeded:
         reverse_by_work_order[item["workOrderName"]].append((
@@ -644,8 +651,20 @@ def ingest_process_executions(content: bytes) -> dict[str, Any]:
     for work_order_name, entries in reverse_by_work_order.items():
         try:
             client.add_object_properties("WorkOrder", work_order_name, [entry[0] for entry in entries])
+            for _, item in entries:
+                ingested_by_id[item["individualName"]].setdefault("relationships", []).append({
+                    "property": "includesExecution",
+                    "target": work_order_name,
+                    "status": "linked",
+                })
         except Exception as exc:
             for _, item in entries:
+                ingested_by_id[item["individualName"]].setdefault("relationships", []).append({
+                    "property": "includesExecution",
+                    "target": work_order_name,
+                    "status": "failed",
+                    "reason": str(exc),
+                })
                 report["relationshipFailures"].append({
                     "sourceRow": item["sourceRow"],
                     "recordId": item["individualName"],
