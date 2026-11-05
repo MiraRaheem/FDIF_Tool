@@ -39,7 +39,17 @@ async def ingest_product_type_review(file: UploadFile = File(..., description="p
 
 @router.post("/work-orders")
 async def ingest_work_order_review(file: UploadFile = File(..., description="work_orders_review.csv")):
-    """Create or update WorkOrders using the reviewed Work Order CSV."""
+    """Create or update WorkOrders from the reviewed CSV.
+
+    Maps the order ID and requested quantity, maps
+    unvalidatedSumPiezasBuenasAcrossPerformanceRows to hasCompletedQuantity,
+    and stores the date-only actual start/end candidates as xsd:dateTime at
+    midnight. The completed quantity is an unvalidated sum across performance
+    rows and may double-count pieces reported at multiple stations; review it
+    before treating it as authoritative. appliesToProduct and includesExecution
+    are linked later when ManufacturedProduct and ProcessExecution records are
+    ingested, respectively.
+    """
     return await _upload_and_ingest(file, ingest_work_orders)
 
 
