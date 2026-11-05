@@ -316,11 +316,13 @@ def _base_report(entity: str, total: int) -> dict[str, Any]:
             "rejected": 0,
             "failed": 0,
             "relationshipFailures": 0,
+            "recordWarnings": 0,
         },
         "ingested": [],
         "rejectedRecords": [],
         "failedRecords": [],
         "relationshipFailures": [],
+        "recordWarnings": [],
         "warnings": [],
     }
 
@@ -329,7 +331,8 @@ def _finish(report: dict[str, Any]) -> dict[str, Any]:
     report["summary"]["rejected"] = len(report["rejectedRecords"])
     report["summary"]["failed"] = len(report["failedRecords"])
     report["summary"]["relationshipFailures"] = len(report["relationshipFailures"])
-    if report["rejectedRecords"] or report["failedRecords"] or report["relationshipFailures"]:
+    report["summary"]["recordWarnings"] = len(report["recordWarnings"])
+    if report["rejectedRecords"] or report["failedRecords"] or report["relationshipFailures"] or report["recordWarnings"]:
         report["status"] = "completed_with_issues"
     return report
 
@@ -424,9 +427,51 @@ def ingest_work_orders(content: bytes) -> dict[str, Any]:
             work_order_id = _required(_value(row, "hasWorkOrderID"), "hasWorkOrderID")
             name = _individual("MEDWOOD_WorkOrder", work_order_id)
             data = [_property("hasWorkOrderID", work_order_id)]
-            quantity = _number(_value(row, "hasRequestedQuantity"), "hasRequestedQuantity", minimum=0)
-            if quantity is not None:
-                data.append(_property("hasRequestedQuantity", quantity))
+            requested_quantity = _number(
+                _value(row, "hasRequestedQuantity"), "hasRequestedQuantity", minimum=0
+            )
+            if requested_quantity is not None:
+                if not isinstance(requested_quantity, int):
+                    report["recordWarnings"].append({
+                        "sourceRow": source_row,
+                        "recordId": name,
+                        "property": "hasRequestedQuantity",
+                        "value": _value(row, "hasRequestedQuantity"),
+                        "reason": "Fractional value omitted because the ontology range is xsd:integer; other valid WorkOrder values will still be ingested.",
+                    })
+                else:
+                    data.append(_property("hasRequestedQuantity", requested_quantity))
+
+            completed_quantity = _number(
+                _value(row, "unvalidatedSumPiezasBuenasAcrossPerformanceRows"),
+                "unvalidatedSumPiezasBuenasAcrossPerformanceRows",
+                minimum=0,
+            )
+            if completed_quantity is not None:
+                if not isinstance(completed_quantity, int):
+                    report["recordWarnings"].append({
+                        "sourceRow": source_row,
+                        "recordId": name,
+                        "property": "hasCompletedQuantity",
+                        "sourceField": "unvalidatedSumPiezasBuenasAcrossPerformanceRows",
+                        "value": _value(row, "unvalidatedSumPiezasBuenasAcrossPerformanceRows"),
+                        "reason": "Fractional value omitted because the ontology range is xsd:integer; other valid WorkOrder values will still be ingested.",
+                    })
+                else:
+                    data.append(_property("hasCompletedQuantity", completed_quantity))
+
+            actual_start = _ontology_datetime(
+                _value(row, "hasActualStartDateCandidate"), "hasActualStartDateCandidate"
+            )
+            actual_end = _ontology_datetime(
+                _value(row, "hasActualEndDateCandidate"), "hasActualEndDateCandidate"
+            )
+            if actual_start and actual_end and actual_end < actual_start:
+                raise ValueError("hasActualEndDateCandidate is earlier than hasActualStartDateCandidate")
+            if actual_start:
+                data.append(_property("hasActualStartDate", actual_start))
+            if actual_end:
+                data.append(_property("hasActualEndDate", actual_end))
             records.append({
                 "sourceRow": source_row,
                 "sourceData": _source_data(row),
@@ -444,11 +489,23 @@ def ingest_work_orders(content: bytes) -> dict[str, Any]:
             })
     records = _deduplicate(records, "key", report["rejectedRecords"])
     report["warnings"].extend([
-        "Candidate actual start/end dates and completed quantity are omitted pending mapping confirmation.",
-        "appliesToProductCodeCandidate is omitted until the ontology range of WorkOrder.appliesToProduct is confirmed.",
+        "hasCompletedQuantity uses unvalidatedSumPiezasBuenasAcrossPerformanceRows as requested. This is an unvalidated sum "
+        "across Performance rows and may double-count pieces reported at multiple stations; review it before treating it as authoritative.",
+        "Actual start/end date candidates are date-only and stored as xsd:dateTime at midnight (YYYY-MM-DDT00:00:00); "
+        "the source does not provide time-of-day precision.",
+        "appliesToProduct is omitted until ManufacturedProduct individuals exist; the ontology range is ManufacturedProduct. "
+        "The ManufacturedProduct ingestion endpoint will add the inverse WorkOrder.appliesToProduct relationship later.",
+        "includesExecution is omitted until ProcessExecution individuals exist; the ProcessExecution ingestion endpoint "
+        "will add the inverse WorkOrder.includesExecution relationship later.",
     ])
     client = BlueprintClient()
-    client.validate_blueprint("WorkOrder", data_properties={"hasWorkOrderID", "hasRequestedQuantity"})
+    client.validate_blueprint(
+        "WorkOrder",
+        data_properties={
+            "hasWorkOrderID", "hasRequestedQuantity", "hasCompletedQuantity",
+            "hasActualStartDate", "hasActualEndDate",
+        },
+    )
     existing = client.list_names("WorkOrder")
     _ingest_rows(client, "WorkOrder", records, existing, report)
     return _finish(report)
@@ -533,6 +590,17 @@ def _iso_date(value: str) -> str | None:
         raise ValueError("hasProductionDate must be an ISO date (YYYY-MM-DD)") from exc
 
 
+def _ontology_datetime(value: str, field: str) -> str | None:
+    """Convert a reviewed date-only value to xsd:dateTime at midnight."""
+    if not value:
+        return None
+    try:
+        parsed_date = date.fromisoformat(value)
+    except ValueError as exc:
+        raise ValueError(f"{field} must be an ISO date (YYYY-MM-DD)") from exc
+    return f"{parsed_date.isoformat()}T00:00:00"
+
+
 def ingest_manufactured_products(content: bytes) -> dict[str, Any]:
     required_headers = {
         "individualName", "hasManufacturedProductID", "isInstanceOfProductType",
@@ -548,6 +616,7 @@ def ingest_manufactured_products(content: bytes) -> dict[str, Any]:
         object_properties={"isInstanceOfProductType", "isProducedByWorkOrder", "producedAtFactory", "isStoredIn"},
     )
     client.validate_blueprint("ProductType", data_properties=set(), object_properties={"hasManufacturedProduct"})
+    client.validate_blueprint("WorkOrder", data_properties=set(), object_properties={"appliesToProduct"})
     client.validate_blueprint("Factory", data_properties=set(), object_properties={"manufacturesProduct"})
     client.validate_blueprint("Warehousing", data_properties=set(), object_properties={"storesProduct"})
     product_types = client.list_names("ProductType")
@@ -627,6 +696,7 @@ def ingest_manufactured_products(content: bytes) -> dict[str, Any]:
     for item in succeeded:
         pairs = [
             ("ProductType", item["productTypeName"], "hasManufacturedProduct"),
+            ("WorkOrder", item["workOrderName"], "appliesToProduct"),
             ("Factory", item["factoryName"], "manufacturesProduct"),
         ]
         if item["warehouseName"]:
