@@ -43,8 +43,9 @@ async def ingest_work_order_review(file: UploadFile = File(..., description="wor
 
     Maps the order ID and requested quantity, maps
     unvalidatedSumPiezasBuenasAcrossPerformanceRows to hasCompletedQuantity,
-    and stores the date-only actual start/end candidates as xsd:dateTime at
-    midnight. The completed quantity is an unvalidated sum across performance
+    and normalizes common actual start/end date formats to xsd:dateTime; date-only
+    values become midnight. Ambiguous slash dates are interpreted month/day/year
+    to match the reviewed export. The completed quantity is an unvalidated sum across performance
     rows and may double-count pieces reported at multiple stations; review it
     before treating it as authoritative. appliesToProduct and includesExecution
     are linked later when ManufacturedProduct and ProcessExecution records are
