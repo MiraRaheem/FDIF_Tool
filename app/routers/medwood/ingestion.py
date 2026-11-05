@@ -1,6 +1,9 @@
 """Upload reviewed MEDWOOD CSVs and create or update NARRATE individuals."""
 
+from typing import Any
+
 from fastapi import APIRouter, File, HTTPException, UploadFile
+from pydantic import BaseModel, Field
 
 from app.services.medwood_review_ingestion import (
     ingest_manufactured_products,
@@ -13,6 +16,23 @@ router = APIRouter(
     prefix="/fdif/medwood/ingest",
     tags=["MEDWOOD Ingestion"],
 )
+
+
+class IngestionReport(BaseModel):
+    """Stable JSON response schema so Swagger can render upload feedback."""
+
+    status: str
+    entity: str
+    summary: dict[str, int]
+    ingested: list[dict[str, Any]] = Field(default_factory=list)
+    rejectedRecords: list[dict[str, Any]] = Field(default_factory=list)
+    failedRecords: list[dict[str, Any]] = Field(default_factory=list)
+    relationshipFailures: list[dict[str, Any]] = Field(default_factory=list)
+    recordWarnings: list[dict[str, Any]] = Field(default_factory=list)
+    warnings: list[str] = Field(default_factory=list)
+
+    class Config:
+        extra = "allow"
 
 
 async def _upload_and_ingest(file: UploadFile, processor):
@@ -55,7 +75,9 @@ async def ingest_work_order_review(file: UploadFile = File(..., description="wor
 
 
 @router.post("/process-executions")
-async def ingest_process_execution_review(file: UploadFile = File(..., description="medwood_process_executions_review.csv")):
+async def ingest_process_execution_review(
+    file: UploadFile = File(..., description="medwood_process_executions_review.csv"),
+) -> IngestionReport:
     """Create/update ProcessExecutions with reviewed dates, duration, quantities, status, and WorkOrder link.
 
     Date-only candidates are stored as midnight UTC to satisfy xsd:dateTimeStamp;
